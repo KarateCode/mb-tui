@@ -4,20 +4,70 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
-	"golang.org/x/crypto/ssh"
+	"github.com/kevinburke/ssh_config"
 	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 type ProgressCallback func(downloaded int64)
 
+type ResolvedHost struct {
+	Hostname string
+	User     string
+	Port     string
+	KeyPath  string
+}
+
 func DownloadFile(
-	user, server, keyPath, remotePath, localPath string,
-	progress ProgressCallback,
+	sshAlias, remotePath, localPath string, progress ProgressCallback,
 ) error {
-	key, err := os.ReadFile(keyPath)
+	// Load ~/.ssh/config
+	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
+	f, err := os.Open(cfgPath)
 	if err != nil {
+		return fmt.Errorf("ssh config open: %w", err)
+	}
+	defer f.Close()
+
+	sshCfg, err := ssh_config.Decode(f)
+	if err != nil {
+		return fmt.Errorf("ssh config parse: %w", err)
+	}
+
+	fmt.Printf("Downloading from: %+v\n", sshAlias)
+
+	host := func(key string) string {
+		v, _ := sshCfg.Get(sshAlias, key)
+		return v
+	}
+
+	h := &ResolvedHost{
+		Hostname: host("Hostname"),
+		User:     host("User"),
+		Port:     host("Port"),
+		KeyPath:  host("IdentityFile"),
+	}
+
+	if h.Hostname == "" {
+		h.Hostname = sshAlias // fallback, just like OpenSSH
+	}
+	if h.User == "" {
+		h.User = "ec2-user" // optional default
+	}
+	if h.Port == "" {
+		h.Port = "22"
+	}
+	if h.KeyPath != "" {
+		h.KeyPath = strings.ReplaceAll(h.KeyPath, "~", "/Users/michaelschneider")
+	}
+
+	key, err := os.ReadFile(h.KeyPath)
+	if err != nil {
+		fmt.Printf("err: %+v\n", err) // output for debug
 		return err
 	}
 
@@ -27,14 +77,15 @@ func DownloadFile(
 	}
 
 	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		User:            h.User,
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout: 10 * time.Second,
+		Timeout:         10 * time.Second,
 	}
 
-	conn, err := ssh.Dial("tcp", server+":22", config)
+	conn, err := ssh.Dial("tcp", h.Hostname+":22", config)
 	if err != nil {
+		fmt.Printf("err: %+v\n", err) // output for debug
 		return err
 	}
 	defer conn.Close()

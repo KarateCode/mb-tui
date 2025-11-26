@@ -7,7 +7,7 @@ import (
 
 func main() {
 	remote := "/client/dump/hockey_eu_product.251103012539.csv"
-	local := "/Users/michaelschneider/code/ti/somefile.csv"
+	local := "/Users/michaelschneider/code/mb-tui/somefile.csv"
 
 	// First SSH/SFTP stat to get file size
 	// (Skipping for brevity—you can add a function to stat the file)
@@ -23,9 +23,7 @@ func main() {
 
 	go func() {
 		DownloadFile(
-			"ec2-user",
-			"ec2-54-194-53-209.eu-west-1.compute.amazonaws.com",
-			"/Users/michaelschneider/.ssh/bauer-prod-eu-cf.pem",
+			"bauer-prod-eu-cf-integration",
 			remote,
 			local,
 			func(bytes int64) {
