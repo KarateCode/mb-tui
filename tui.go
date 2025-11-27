@@ -8,18 +8,18 @@ import (
 )
 
 type model struct {
-	total     int64
+	total      int64
 	downloaded int64
-	bar       progress.Model
-	done      bool
+	bar        progress.Model
+	done       bool
 }
 
 type progressMsg int64
+type setTotalMsg int64
 
-func newModel(total int64) model {
+func newModel() model {
 	return model{
-		total: total,
-		bar:   progress.New(progress.WithDefaultGradient()),
+		bar: progress.New(progress.WithDefaultGradient()),
 	}
 }
 
@@ -34,7 +34,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.downloaded = int64(msg)
 		if m.downloaded >= m.total {
 			m.done = true
+			return m, tea.Quit
 		}
+		return m, nil
+
+	case setTotalMsg:
+		m.total = int64(msg)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -49,10 +54,18 @@ func (m model) View() string {
 	if m.done {
 		return "Download complete! 🎉\n"
 	}
-	ratio := float64(m.downloaded) / float64(m.total)
+
+	var ratio float64
+	if m.total == 0 {
+		ratio = 0
+	} else {
+		ratio = float64(m.downloaded) / float64(m.total)
+	}
+
 	return fmt.Sprintf(
-		"Downloading...\n\n%s\n\n%d%%\n",
+		"Downloading...\n\n%s\n\n",
+		// "Downloading...\n\n%s\n\n%d%%\n",
 		m.bar.ViewAs(ratio),
-		int(ratio*100),
+		// int(ratio*100),
 	)
 }

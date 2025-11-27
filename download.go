@@ -14,6 +14,7 @@ import (
 )
 
 type ProgressCallback func(downloaded int64)
+type SetTotalCallback func(downloaded int64)
 
 type ResolvedHost struct {
 	Hostname string
@@ -23,7 +24,7 @@ type ResolvedHost struct {
 }
 
 func DownloadFile(
-	sshAlias, remotePath, localPath string, progress ProgressCallback,
+	sshAlias, remotePath, localPath string, setTotal SetTotalCallback, progress ProgressCallback,
 ) error {
 	// Load ~/.ssh/config
 	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
@@ -104,6 +105,7 @@ func DownloadFile(
 
 	stat, _ := src.Stat()
 	total := stat.Size()
+	setTotal(total)
 
 	dst, err := os.Create(localPath)
 	if err != nil {
