@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/kevinburke/ssh_config"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -23,8 +24,48 @@ type ResolvedHost struct {
 	KeyPath  string
 }
 
+func DownloadFiles(fileNames []string, p *tea.Program) {
+	done := make([]chan bool, len(fileNames))
+	for i := range done {
+		done[i] = make(chan bool)
+	}
+
+	for i, fileName := range fileNames {
+		ch := done[i]
+
+		cwd, _ := os.Getwd()
+		remote := "/client/dump/" + fileName
+		local := filepath.Join(cwd, fileName)
+		go DownloadFile(
+			"bauer-prod-eu-cf-integration",
+			remote,
+			local,
+			func(total int64) {
+				p.Send(setTotalMsg(total))
+			},
+			func(bytes int64) {
+				p.Send(progressMsg(bytes))
+			},
+			ch,
+		)
+	}
+
+	fmt.Printf("attempting read from channels\n")
+
+	for _, ch := range done {
+		<-ch
+		fmt.Printf("got one! read from a channel\n")
+	}
+
+}
+
 func DownloadFile(
-	sshAlias, remotePath, localPath string, setTotal SetTotalCallback, progress ProgressCallback,
+	sshAlias,
+	remotePath,
+	localPath string,
+	setTotal SetTotalCallback,
+	progress ProgressCallback,
+	c chan bool,
 ) error {
 	// Load ~/.ssh/config
 	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
@@ -136,5 +177,6 @@ func DownloadFile(
 	}
 
 	fmt.Printf("Downloaded %d / %d bytes\n", downloaded, total)
+	c <- true
 	return nil
 }

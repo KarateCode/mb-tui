@@ -34,7 +34,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.downloaded = int64(msg)
 		if m.downloaded >= m.total {
 			m.done = true
-			return m, tea.Quit
+			// return m, tea.Quit
 		}
 		return m, nil
 

@@ -5,6 +5,7 @@ go 1.22
 require (
 	github.com/charmbracelet/bubbles v0.16.1
 	github.com/charmbracelet/bubbletea v0.26.2
+	github.com/kevinburke/ssh_config v1.4.0
 	github.com/pkg/sftp v1.13.6
 	golang.org/x/crypto v0.23.0
 )
@@ -14,7 +15,6 @@ require (
 	github.com/charmbracelet/harmonica v0.2.0 // indirect
 	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
-	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
