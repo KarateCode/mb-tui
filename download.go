@@ -16,6 +16,7 @@ import (
 
 type ProgressCallback func(downloaded int64)
 type SetTotalCallback func(downloaded int64)
+type SetDoneCallback func()
 
 type ResolvedHost struct {
 	Hostname string
@@ -25,38 +26,29 @@ type ResolvedHost struct {
 }
 
 func DownloadFiles(fileNames []string, p *tea.Program) {
-	done := make([]chan bool, len(fileNames))
-	for i := range done {
-		done[i] = make(chan bool)
-	}
+	const sshAlias = "bauer-prod-eu-cf-integration"
+	fmt.Printf("Downloading from: %+v\n", sshAlias)
 
 	for i, fileName := range fileNames {
-		ch := done[i]
-
 		cwd, _ := os.Getwd()
 		remote := "/client/dump/" + fileName
 		local := filepath.Join(cwd, fileName)
+
 		go DownloadFile(
-			"bauer-prod-eu-cf-integration",
+			sshAlias,
 			remote,
 			local,
 			func(total int64) {
-				p.Send(setTotalMsg(total))
+				p.Send(setTotalMsg{Index: i, Total: total})
 			},
 			func(bytes int64) {
-				p.Send(progressMsg(bytes))
+				p.Send(progressMsg{Index: i, Bytes: bytes})
 			},
-			ch,
+			func() {
+				p.Send(doneMsg{Index: i})
+			},
 		)
 	}
-
-	fmt.Printf("attempting read from channels\n")
-
-	for _, ch := range done {
-		<-ch
-		fmt.Printf("got one! read from a channel\n")
-	}
-
 }
 
 func DownloadFile(
@@ -65,7 +57,7 @@ func DownloadFile(
 	localPath string,
 	setTotal SetTotalCallback,
 	progress ProgressCallback,
-	c chan bool,
+	setDone SetDoneCallback,
 ) error {
 	// Load ~/.ssh/config
 	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
@@ -79,8 +71,6 @@ func DownloadFile(
 	if err != nil {
 		return fmt.Errorf("ssh config parse: %w", err)
 	}
-
-	fmt.Printf("Downloading from: %+v\n", sshAlias)
 
 	host := func(key string) string {
 		v, _ := sshCfg.Get(sshAlias, key)
@@ -176,7 +166,6 @@ func DownloadFile(
 		}
 	}
 
-	fmt.Printf("Downloaded %d / %d bytes\n", downloaded, total)
-	c <- true
+	setDone()
 	return nil
 }
