@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
@@ -84,23 +85,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	var ratio1 float64
-	if m.fileDownloads[0].total == 0 {
-		ratio1 = 0
-	} else {
-		ratio1 = float64(m.fileDownloads[0].downloaded) / float64(m.fileDownloads[0].total)
+	var lines []string
+	lines = append(lines, "\n", "")
+
+	for _, d := range m.fileDownloads {
+		var ratio float64
+		if d.total > 0 {
+			ratio = float64(d.downloaded) / float64(d.total)
+		}
+
+		lines = append(lines, d.bar.ViewAs(ratio), "")
 	}
 
-	var ratio2 float64
-	if m.fileDownloads[1].total == 0 {
-		ratio2 = 0
-	} else {
-		ratio2 = float64(m.fileDownloads[1].downloaded) / float64(m.fileDownloads[1].total)
-	}
-
-	return fmt.Sprintf(
-		"Downloading...\n\n%s\n\n%s\n\n",
-		m.fileDownloads[0].bar.ViewAs(ratio1),
-		m.fileDownloads[1].bar.ViewAs(ratio2),
-	)
+	return strings.Join(lines, "\n")
 }
