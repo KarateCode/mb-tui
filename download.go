@@ -51,25 +51,18 @@ func DownloadFiles(fileNames []string, p *tea.Program) {
 	}
 }
 
-func DownloadFile(
-	sshAlias,
-	remotePath,
-	localPath string,
-	setTotal SetTotalCallback,
-	progress ProgressCallback,
-	setDone SetDoneCallback,
-) error {
+func NewClientFromSshConfig(sshAlias string) (*ResolvedHost, error) {
 	// Load ~/.ssh/config
 	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
 	f, err := os.Open(cfgPath)
 	if err != nil {
-		return fmt.Errorf("ssh config open: %w", err)
+		return nil, err
 	}
 	defer f.Close()
 
 	sshCfg, err := ssh_config.Decode(f)
 	if err != nil {
-		return fmt.Errorf("ssh config parse: %w", err)
+		return nil, err
 	}
 
 	host := func(key string) string {
@@ -95,6 +88,23 @@ func DownloadFile(
 	}
 	if h.KeyPath != "" {
 		h.KeyPath = strings.ReplaceAll(h.KeyPath, "~", "/Users/michaelschneider")
+	}
+
+	return h, nil
+}
+
+func DownloadFile(
+	sshAlias,
+	remotePath,
+	localPath string,
+	setTotal SetTotalCallback,
+	progress ProgressCallback,
+	setDone SetDoneCallback,
+) error {
+	h, err := NewClientFromSshConfig(sshAlias)
+	if err != nil {
+		fmt.Printf("err: %+v\n", err) // output for debug
+		return err
 	}
 
 	key, err := os.ReadFile(h.KeyPath)
