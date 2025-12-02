@@ -6,6 +6,9 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	// "golang.org/x/crypto/ssh"
+	// "batchmenu"
+	"example.com/downloader/batchmenu"
+
 	"strings"
 )
 
@@ -28,8 +31,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("REMOTE OUTPUT:")
-	fmt.Println(output)
+	// fmt.Println("REMOTE OUTPUT:")
+	// fmt.Println(output)
 
 	lines := []string{}
 	scanner := bufio.NewScanner(strings.NewReader(string(output)))
@@ -43,22 +46,29 @@ func main() {
 	fmt.Printf("lines:\n")
 	fmt.Printf("%+v\n", lines)
 
+	m := batchmenu.NewMenu(lines)
+	p := tea.NewProgram(m)
+	if _, err := p.Run(); err == nil {
+		// fmt.Println("Selected:", result.(batchmenu.Model).Selected())
+		fmt.Println("exiting p.Run")
+	}
+
 	return
 
-	fileNames := []string{
-		"hockey_eu_product.251103012539.csv",
-		"hockey_eu_pricing.251103012539.csv",
-		"hockey_eu_sku.251103012539.csv",
-	}
-	m := newModel(fileNames)
-	p := tea.NewProgram(m)
+	// fileNames := []string{
+	// 	"hockey_eu_product.251103012539.csv",
+	// 	"hockey_eu_pricing.251103012539.csv",
+	// 	"hockey_eu_sku.251103012539.csv",
+	// }
+	// m := newModel(fileNames)
+	// p := tea.NewProgram(m)
 
-	go DownloadFiles(fileNames, p)
+	// go DownloadFiles(fileNames, p)
 
-	if _, err := p.Run(); err != nil {
-		panic(err)
-	}
-	fmt.Printf("\nDownload complete! 🎉 \n")
+	// if _, err := p.Run(); err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("\nDownload complete! 🎉 \n")
 
-	tea.Quit()
+	// tea.Quit()
 }
