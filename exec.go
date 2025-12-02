@@ -7,8 +7,8 @@ import (
 	"os"
 )
 
-func RunRemoteCommand(host *ResolvedHost, privateKeyPath, command string) (string, error) {
-	key, err := os.ReadFile(privateKeyPath)
+func RunRemoteCommand(host *ResolvedHost, command string) (string, error) {
+	key, err := os.ReadFile(host.KeyPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read private key: %w", err)
 	}

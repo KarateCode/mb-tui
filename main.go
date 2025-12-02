@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	// "exec.go"
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	// "golang.org/x/crypto/ssh"
+	"strings"
 )
 
 func main() {
@@ -13,19 +15,33 @@ func main() {
 		panic(err)
 	}
 
-	// cmd := `ls | sed -n 's/${prefix}[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`
 	prefix := "hockey_eu_"
 	cmd := fmt.Sprintf(
-		`ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
+		// `ls`,
+		// `cd /client/EU/archive; ls`,
+		`cd /client/EU/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
+		// `ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
 		prefix,
 	)
-	output, err := RunRemoteCommand(host, "~/.ssh/id_rsa", cmd)
+	output, err := RunRemoteCommand(host, cmd)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("REMOTE OUTPUT:")
 	fmt.Println(output)
+
+	lines := []string{}
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	fmt.Printf("lines:\n")
+	fmt.Printf("%+v\n", lines)
 
 	return
 
