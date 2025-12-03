@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type item string
@@ -25,23 +26,42 @@ type model struct {
 }
 
 func NewMenu(batchList []string) model {
+	// Convert to list items
 	items := make([]list.Item, len(batchList))
-	for i, b := range batchList {
-		items[i] = item(b)
+	for i, s := range batchList {
+		items[i] = item(s)
 	}
 
+	// Text input
 	ti := textinput.New()
-	ti.Placeholder = "filter..."
+	ti.Placeholder = "Search..."
 	ti.Focus()
 
-	ls := list.New(items, list.NewDefaultDelegate(), 30, 15)
-	ls.Title = "Which Batch?"
+	// List
+	l := list.New(items, list.NewDefaultDelegate(), 50, 20) // WIDTH=50, HEIGHT=20 rows
+	l.SetShowStatusBar(false)
+	l.SetFilteringEnabled(true)
+	l.SetShowHelp(false)
+	l.SetShowTitle(false)
+	l.SetShowPagination(false)
+
+	// Remove all padding/margins for tight rows
+	// l.Styles.NormalTitle = lipgloss.NewStyle()
+	l.Styles.Title = lipgloss.NewStyle()
+	l.SetDelegate(newCompactDelegate())
 
 	return model{
 		allBatches:  batchList,
 		filterInput: ti,
-		list:        ls,
+		list:        l,
 	}
+}
+
+func newCompactDelegate() list.DefaultDelegate {
+	d := list.NewDefaultDelegate()
+	// d.Styles.Normal = lipgloss.NewStyle()
+	// d.Styles.Selected = lipgloss.NewStyle().Foreground(lipgloss.Color("212"))
+	return d
 }
 
 func (m model) Init() tea.Cmd {

@@ -1,15 +1,14 @@
-package main
+package tui
 
 import (
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
+	exec "example.com/downloader/exec"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/kevinburke/ssh_config"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
@@ -17,13 +16,6 @@ import (
 type ProgressCallback func(downloaded int64)
 type SetTotalCallback func(downloaded int64)
 type SetDoneCallback func()
-
-type ResolvedHost struct {
-	Hostname string
-	User     string
-	Port     string
-	KeyPath  string
-}
 
 func DownloadFiles(fileNames []string, p *tea.Program) {
 	const sshAlias = "bauer-prod-eu-cf-integration"
@@ -51,48 +43,6 @@ func DownloadFiles(fileNames []string, p *tea.Program) {
 	}
 }
 
-func NewClientFromSshConfig(sshAlias string) (*ResolvedHost, error) {
-	// Load ~/.ssh/config
-	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
-	f, err := os.Open(cfgPath)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	sshCfg, err := ssh_config.Decode(f)
-	if err != nil {
-		return nil, err
-	}
-
-	host := func(key string) string {
-		v, _ := sshCfg.Get(sshAlias, key)
-		return v
-	}
-
-	h := &ResolvedHost{
-		Hostname: host("Hostname"),
-		User:     host("User"),
-		Port:     host("Port"),
-		KeyPath:  host("IdentityFile"),
-	}
-
-	if h.Hostname == "" {
-		h.Hostname = sshAlias // fallback, just like OpenSSH
-	}
-	if h.User == "" {
-		h.User = "ec2-user" // optional default
-	}
-	if h.Port == "" {
-		h.Port = "22"
-	}
-	if h.KeyPath != "" {
-		h.KeyPath = strings.ReplaceAll(h.KeyPath, "~", "/Users/michaelschneider")
-	}
-
-	return h, nil
-}
-
 func DownloadFile(
 	sshAlias,
 	remotePath,
@@ -101,7 +51,7 @@ func DownloadFile(
 	progress ProgressCallback,
 	setDone SetDoneCallback,
 ) error {
-	h, err := NewClientFromSshConfig(sshAlias)
+	h, err := exec.NewClientFromSshConfig(sshAlias)
 	if err != nil {
 		fmt.Printf("err: %+v\n", err) // output for debug
 		return err

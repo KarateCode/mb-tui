@@ -1,9 +1,10 @@
-package main
+package tui
 
 import (
 	// "fmt"
 	"strings"
 
+	// "example.com/downloader/batchmenu"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 )
