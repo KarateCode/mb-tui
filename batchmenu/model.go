@@ -2,7 +2,6 @@ package batchmenu
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -26,29 +25,6 @@ type model struct {
 	selected string
 }
 
-type singleLineItemDelegate struct{}
-
-func (d singleLineItemDelegate) Height() int                               { return 1 }
-func (d singleLineItemDelegate) Spacing() int                              { return 0 }
-func (d singleLineItemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-
-func (d singleLineItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(item)
-	if !ok {
-		return
-	}
-
-	str := string(i)
-
-	if index == m.Index() {
-		str = "> " + str
-	} else {
-		str = "  " + str
-	}
-
-	fmt.Fprint(w, str)
-}
-
 func NewMenu(batchList []string) model {
 	// Convert to list items
 	items := make([]list.Item, len(batchList))
@@ -62,52 +38,25 @@ func NewMenu(batchList []string) model {
 	ti.Focus()
 
 	// List
-
-	// delegate := singleLineItemDelegate{}
 	delegate := list.NewDefaultDelegate()
 	delegate.ShowDescription = false
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
-	// delegate.Styles.NormalTitle = delegate.Styles.NormalTitle.Padding(10, 10, 10, 11)
-	// delegate.Styles.SelectedTitle = delegate.Styles.SelectedTitle.Padding(10, 10, 10, 11)
 
 	l := list.New(items, delegate, 50, 40) // WIDTH=50, HEIGHT=20 rows
-	// l.SetShowDescription(false)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
 	l.SetShowTitle(false)
 	l.SetShowPagination(false)
 
-	// Remove all padding/margins for tight rows
-	// l.Styles.NormalTitle = lipgloss.NewStyle()
 	l.Styles.Title = lipgloss.NewStyle()
-	// l.SetDelegate(newCompactDelegate())
 
 	return model{
 		allBatches:  batchList,
 		filterInput: ti,
 		list:        l,
 	}
-}
-
-func newCompactDelegate() list.DefaultDelegate {
-	d := list.NewDefaultDelegate()
-	d.ShowDescription = false
-	d.SetHeight(4)
-	// d.Styles.NormalTitle = d.Styles.NormalTitle.Padding(0, 0, 0, 3)
-	d.Styles.NormalTitle = d.Styles.NormalTitle.Padding(0, 0, 0, 1)
-	d.Styles.SelectedTitle = d.Styles.SelectedTitle.Padding(0, 0, 0, 1)
-	// d.Styles.NormalText = d.Styles.NormalText.Padding(0)
-	// d.Styles.SelectedText = d.Styles.SelectedText.Padding(0)
-	// d.Height = 1
-	// d.Styles.SelectedTitle = d.Styles.SelectedTitle.Padding(0, 0, 0, 1)
-	// d.Styles.NormalTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("99")).MarginBottom(0).MarginTop(0)
-	// d.Styles.SelectedTitle = lipgloss.NewStyle().Foreground(lipgloss.Color("212")).MarginBottom(0)
-	// marginBottom := d.Styles
-	// fmt.Printf("marginBottom:\n")
-	// fmt.Printf("%+v\n", marginBottom)
-	return d
 }
 
 func (m model) Init() tea.Cmd {
@@ -124,6 +73,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 
+			// Emacs-style movement
+		case "ctrl+n":
+			// Move down
+			m.list.CursorDown()
+			return m, nil
+
+		case "ctrl+p":
+			// Move up
+			m.list.CursorUp()
+			return m, nil
+
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
@@ -139,19 +99,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Filter list items
 	filter := strings.ToLower(m.filterInput.Value())
 
-	var filtered []list.Item
-	for _, b := range m.allBatches {
-		if strings.Contains(strings.ToLower(b), filter) {
-			filtered = append(filtered, item(b))
+	// var filtered []list.Item
+	// for _, b := range m.allBatches {
+	// 	if strings.Contains(strings.ToLower(b), filter) {
+	// 		filtered = append(filtered, item(b))
+	// 	}
+	// }
+	// m.list.SetItems(filtered)
+	if filter != "" {
+		var filtered []list.Item
+		for _, b := range m.allBatches {
+			if strings.Contains(strings.ToLower(b), filter) {
+				filtered = append(filtered, item(b))
+			}
 		}
+		m.list.SetItems(filtered)
+	} else {
+		// Only reset when returning to full list
+		m.list.SetItems(itemsFrom(m.allBatches))
 	}
-
-	m.list.SetItems(filtered)
 
 	// Update list
 	m.list, _ = m.list.Update(msg)
 
 	return m, cmd
+}
+
+// itemsFrom converts []string -> []list.Item
+func itemsFrom(batches []string) []list.Item {
+	items := make([]list.Item, 0, len(batches))
+	for _, b := range batches {
+		items = append(items, item(b))
+	}
+	return items
 }
 
 func (m model) View() string {
