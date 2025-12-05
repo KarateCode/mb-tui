@@ -1,11 +1,11 @@
-package scripts
+package peak_setup_integration
 
 import (
 	"bufio"
 	"fmt"
 	"strings"
 
-	"example.com/downloader/batchmenu"
+	// "example.com/downloader/batchmenu"
 	exec "example.com/downloader/exec"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -40,9 +40,11 @@ func PeakSetupIntegration() {
 	fmt.Printf("lines:\n")
 	fmt.Printf("%+v\n", lines)
 
-	m := batchmenu.NewMenu(lines)
-	p := tea.NewProgram(m)
-	if _, err := p.Run(); err == nil {
+	model := NewModel(lines)
+	// m := batchmenu.NewMenu(lines)
+	program := tea.NewProgram(model)
+	model.Program = program
+	if _, err := program.Run(); err == nil {
 		// fmt.Println("Selected:", result.(batchmenu.Model).Selected())
 		fmt.Println("exiting p.Run")
 	}

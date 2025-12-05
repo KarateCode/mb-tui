@@ -16,16 +16,17 @@ func (i item) Title() string       { return string(i) }
 func (i item) Description() string { return "" }
 func (i item) FilterValue() string { return string(i) }
 
-type model struct {
+type Model struct {
 	allBatches  []string
 	filterInput textinput.Model
 	list        list.Model
 
+	Done     bool
 	quitting bool
 	selected string
 }
 
-func NewMenu(batchList []string) model {
+func NewMenu(batchList []string) Model {
 	// Convert to list items
 	items := make([]list.Item, len(batchList))
 	for i, s := range batchList {
@@ -52,19 +53,20 @@ func NewMenu(batchList []string) model {
 
 	l.Styles.Title = lipgloss.NewStyle()
 
-	return model{
+	return Model{
 		allBatches:  batchList,
 		filterInput: ti,
 		list:        l,
+		Done:        false,
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 	// return textinput.Blink
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -87,6 +89,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
+				m.Done = true
 			}
 			return m, tea.Quit
 		}
@@ -134,7 +137,7 @@ func itemsFrom(batches []string) []list.Item {
 	return items
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	if m.quitting {
 		return ""
 	}
@@ -146,6 +149,6 @@ func (m model) View() string {
 	)
 }
 
-func (m model) Selected() string {
+func (m Model) Selected() string {
 	return m.selected
 }

@@ -1,4 +1,4 @@
-package tui
+package downloader
 
 import (
 	// "fmt"
@@ -15,28 +15,29 @@ type fileDownload struct {
 	bar        progress.Model
 	done       bool
 }
-type model struct {
+type Model struct {
 	fileDownloads []fileDownload
 	doneCount     int
+	Done          bool
 }
 
-type setTotalMsg struct {
+type SetTotalMsg struct {
 	Index int
 	Total int64
 }
 
-type progressMsg struct {
+type ProgressMsg struct {
 	Index int
 	Bytes int64
 }
 
-type doneMsg struct {
+type DoneMsg struct {
 	Index int
 }
 
-func newModel(fileNames []string) model {
+func NewModel(fileNames []string) Model {
 	fileCount := len(fileNames)
-	m := model{
+	m := Model{
 		fileDownloads: make([]fileDownload, fileCount),
 	}
 
@@ -47,15 +48,15 @@ func newModel(fileNames []string) model {
 	return m
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	// fmt.Printf("from update: %+v\n", msg)
 	switch msg := msg.(type) {
 
-	case progressMsg:
+	case ProgressMsg:
 		d := &m.fileDownloads[msg.Index]
 		d.downloaded = msg.Bytes
 
@@ -65,7 +66,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 
-	case setTotalMsg:
+	case SetTotalMsg:
 		// fmt.Printf("\n\n\n\n\nsetTotalMsg: %+v %+v \n", msg.Index, msg.Total)
 		m.fileDownloads[msg.Index].total = msg.Total
 		return m, nil
@@ -75,9 +76,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 
-	case doneMsg:
+	case DoneMsg:
 		m.doneCount++
 		if m.doneCount == len(m.fileDownloads) {
+			m.Done = true
 			return m, tea.Quit
 		}
 		return m, nil
@@ -85,7 +87,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m Model) View() string {
 	var lines []string
 	lines = append(lines, "\n", "")
 
