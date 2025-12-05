@@ -25,19 +25,19 @@ type Model struct {
 	Program    *tea.Program
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func NewModel(lines []string) Model {
+func NewModel(lines []string) *Model {
 	m := batchmenu.NewMenu(lines)
-	return Model{
+	return &Model{
 		step:      0,
 		batchMenu: m,
 	}
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -85,7 +85,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	switch m.step {
 
 	case stepBatchMenu:
