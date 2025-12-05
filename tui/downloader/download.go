@@ -1,4 +1,4 @@
-package tui
+package downloader
 
 import (
 	"fmt"
@@ -31,13 +31,13 @@ func DownloadFiles(fileNames []string, p *tea.Program) {
 			remote,
 			local,
 			func(total int64) {
-				p.Send(setTotalMsg{Index: i, Total: total})
+				p.Send(SetTotalMsg{Index: i, Total: total})
 			},
 			func(bytes int64) {
-				p.Send(progressMsg{Index: i, Bytes: bytes})
+				p.Send(ProgressMsg{Index: i, Bytes: bytes})
 			},
 			func() {
-				p.Send(doneMsg{Index: i})
+				p.Send(DoneMsg{Index: i})
 			},
 		)
 	}
