@@ -63,10 +63,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				"hockey_eu_sku.251103012539.csv",
 			}
 			m.downloader = downloader.NewModel(fileNames)
-			// need to run DownloadFiles, but we're missing tea Program
-			downloader.DownloadFiles(fileNames, m.Program)
+			downloadFiles := func() tea.Msg {
+				return downloader.DownloadFiles(fileNames, m.Program)
+			}
 			m.step = stepDownloading
-			return m, m.downloader.Init()
+			return m, downloadFiles
 		}
 
 		return m, cmd
