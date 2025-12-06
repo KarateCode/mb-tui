@@ -214,7 +214,7 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 			// selected, ok := m.list.SelectedItem().(batchItem)
 			// if ok {
 			m.selected = string(selected)
-			m.Done = true
+			// m.Done = true
 			// }
 			// if selected, ok := m.list.SelectedItem().(batchItem); ok {
 			// 	m.selected = string(selected)
@@ -233,7 +233,17 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 			// fmt.Printf("ok:\n")
 			// fmt.Printf("%+v\n", ok)
 			// panic("just end")
-			return m, nil
+
+			// Should be sending tea.Cmd to signal instead of m.Done
+			// m.selected = string(selected)
+			// m.Done = true
+			teaCmd := func() tea.Msg {
+				choice := BatchChoice(m.selected)
+				return choice
+			}
+
+			return m, teaCmd
+			// return m, nil
 			// return m, tea.Quit
 		}
 	}

@@ -20,6 +20,7 @@ const (
 )
 
 type IntegrationMenuChoice string
+type BatchChoice string
 type Model struct {
 	step            step
 	integrationMenu IntegrationMenuModel
@@ -49,6 +50,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
+	case BatchChoice:
+		fileNames := []string{
+			"hockey_eu_product.251103012539.csv",
+			"hockey_eu_pricing.251103012539.csv",
+			"hockey_eu_sku.251103012539.csv",
+		}
+		m.downloader = downloader.NewModel(fileNames)
+		downloadFiles := func() tea.Msg {
+			return downloader.DownloadFiles(fileNames, m.Program)
+		}
+		m.step = stepDownloading
+		return m, downloadFiles
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
@@ -68,19 +82,19 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.batchMenu, cmd = m.batchMenu.Update(msg)
 
 		// When batch is chosen -> transition
-		if m.batchMenu.Done {
-			fileNames := []string{
-				"hockey_eu_product.251103012539.csv",
-				"hockey_eu_pricing.251103012539.csv",
-				"hockey_eu_sku.251103012539.csv",
-			}
-			m.downloader = downloader.NewModel(fileNames)
-			downloadFiles := func() tea.Msg {
-				return downloader.DownloadFiles(fileNames, m.Program)
-			}
-			m.step = stepDownloading
-			return m, downloadFiles
-		}
+		// if m.batchMenu.Done {
+		// 	fileNames := []string{
+		// 		"hockey_eu_product.251103012539.csv",
+		// 		"hockey_eu_pricing.251103012539.csv",
+		// 		"hockey_eu_sku.251103012539.csv",
+		// 	}
+		// 	m.downloader = downloader.NewModel(fileNames)
+		// 	downloadFiles := func() tea.Msg {
+		// 		return downloader.DownloadFiles(fileNames, m.Program)
+		// 	}
+		// 	m.step = stepDownloading
+		// 	return m, downloadFiles
+		// }
 
 		return m, cmd
 
