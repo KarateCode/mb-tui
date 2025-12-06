@@ -1,4 +1,4 @@
-package batchmenu
+package peak_setup_integration
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ func (i item) Title() string       { return string(i) }
 func (i item) Description() string { return "" }
 func (i item) FilterValue() string { return string(i) }
 
-type Model struct {
+type IntegrationMenuModel struct {
 	allBatches  []string
 	filterInput textinput.Model
 	list        list.Model
@@ -26,10 +26,19 @@ type Model struct {
 	selected string
 }
 
-func NewMenu(batchList []string) Model {
-	// Convert to list items
-	items := make([]list.Item, len(batchList))
-	for i, s := range batchList {
+func NewIntegrationMenu() IntegrationMenuModel {
+	// message: 'Would you like to trim files to a certain import?',
+	fileTypes := []string{
+		"Nope! Give me them all",
+		"Product Import",
+		"Customer Import",
+		"Inventory Import",
+		"SalesRep Import",
+		"BG/BHC import",
+		"SalesOrg/PoType Import",
+	}
+	items := make([]list.Item, len(fileTypes))
+	for i, s := range fileTypes {
 		items[i] = item(s)
 	}
 
@@ -44,7 +53,7 @@ func NewMenu(batchList []string) Model {
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
 
-	l := list.New(items, delegate, 50, 40) // WIDTH=50, HEIGHT=20 rows
+	l := list.New(items, delegate, 50, 40) // WIDTH, HEIGHT
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
@@ -53,20 +62,29 @@ func NewMenu(batchList []string) Model {
 
 	l.Styles.Title = lipgloss.NewStyle()
 
-	return Model{
-		allBatches:  batchList,
+	return IntegrationMenuModel{
+		allBatches:  fileTypes,
 		filterInput: ti,
 		list:        l,
 		Done:        false,
 	}
+
 }
 
-func (m Model) Init() tea.Cmd {
+func (m IntegrationMenuModel) Init() tea.Cmd {
 	return nil
-	// return textinput.Blink
 }
 
-func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
+// itemsFrom converts []string -> []list.Item
+func itemsFrom(batches []string) []list.Item {
+	items := make([]list.Item, 0, len(batches))
+	for _, b := range batches {
+		items = append(items, item(b))
+	}
+	return items
+}
+
+func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -75,23 +93,28 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			m.quitting = true
 			return m, tea.Quit
 
-			// Emacs-style movement
 		case "ctrl+n":
-			// Move down
 			m.list.CursorDown()
 			return m, nil
 
 		case "ctrl+p":
-			// Move up
 			m.list.CursorUp()
 			return m, nil
 
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
-				m.Done = true
+				// m.Done = true
+				teaCmd := func() tea.Msg {
+					choice := IntegrationMenuChoice(m.selected)
+					return choice
+				}
+
+				return m, teaCmd
 			}
-			return m, tea.Quit
+			return m, nil // should probably send back a Cmd where tea.Msg is the selected value
+			// might have to convert from item to string
+			// IntegrationMenuChoice
 		}
 	}
 
@@ -102,13 +125,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	// Filter list items
 	filter := strings.ToLower(m.filterInput.Value())
 
-	// var filtered []list.Item
-	// for _, b := range m.allBatches {
-	// 	if strings.Contains(strings.ToLower(b), filter) {
-	// 		filtered = append(filtered, item(b))
-	// 	}
-	// }
-	// m.list.SetItems(filtered)
 	if filter != "" {
 		var filtered []list.Item
 		for _, b := range m.allBatches {
@@ -128,16 +144,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, cmd
 }
 
-// itemsFrom converts []string -> []list.Item
-func itemsFrom(batches []string) []list.Item {
-	items := make([]list.Item, 0, len(batches))
-	for _, b := range batches {
-		items = append(items, item(b))
-	}
-	return items
-}
-
-func (m Model) View() string {
+func (m IntegrationMenuModel) View() string {
 	if m.quitting {
 		return ""
 	}
@@ -147,8 +154,4 @@ func (m Model) View() string {
 		m.filterInput.View(),
 		m.list.View(),
 	)
-}
-
-func (m Model) Selected() string {
-	return m.selected
 }

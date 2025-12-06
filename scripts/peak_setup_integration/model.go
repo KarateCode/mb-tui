@@ -6,7 +6,7 @@ import (
 
 	// "example.com/downloader/batchmenu"
 	// "github.com/charmbracelet/bubbles/progress"
-	batchmenu "example.com/downloader/batchmenu"
+	// batchmenu "example.com/downloader/batchmenu"
 	downloader "example.com/downloader/tui/downloader"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,45 +14,57 @@ import (
 type step int
 
 const (
-	stepBatchMenu step = iota
+	stepIntegrationMenu step = iota
+	stepBatchMenu
 	stepDownloading
 )
 
+type IntegrationMenuChoice string
 type Model struct {
-	step       step
-	batchMenu  batchmenu.Model
-	downloader downloader.Model
-	Program    *tea.Program
+	step            step
+	integrationMenu IntegrationMenuModel
+	batchMenu       BatchModel
+	downloader      downloader.Model
+	Program         *tea.Program
 }
 
 func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func NewModel(lines []string) *Model {
-	m := batchmenu.NewMenu(lines)
+func NewModel() *Model {
+	m := NewIntegrationMenu()
 	return &Model{
-		step:      0,
-		batchMenu: m,
+		step:            0,
+		integrationMenu: m,
 	}
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
+	case IntegrationMenuChoice:
+		choice := IntegrationMenuChoice(msg)
+		m.batchMenu = NewMenu(choice)
+		m.step = stepBatchMenu
+		return m, m.batchMenu.Init()
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
-			// m.quitting = true
 			return m, tea.Quit
 		}
 	}
 
 	switch m.step {
 
+	case stepIntegrationMenu:
+		var cmd tea.Cmd
+		m.integrationMenu, cmd = m.integrationMenu.Update(msg)
+		return m, cmd
+
 	case stepBatchMenu:
 		var cmd tea.Cmd
-		// m.batchMenu, _ = m.batchMenu.Update(msg)
 		m.batchMenu, cmd = m.batchMenu.Update(msg)
 
 		// When batch is chosen -> transition
@@ -88,6 +100,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	switch m.step {
+
+	case stepIntegrationMenu:
+		return m.integrationMenu.View()
 
 	case stepBatchMenu:
 		return m.batchMenu.View()
