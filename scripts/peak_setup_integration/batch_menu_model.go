@@ -21,7 +21,6 @@ func (i batchItem) FilterValue() string { return string(i) }
 
 type (
 	downloadCompleteMsg []string
-	// downloadErrorMsg error
 )
 
 type BatchModel struct {
@@ -296,7 +295,7 @@ func (m BatchModel) View() string {
 	}
 
 	if m.isDownloading {
-		return "Downloading file..."
+		return "\n\nCalculating batches..."
 		// return fmt.Sprintf("%s Downloading file...", m.spinner.View())
 	}
 
