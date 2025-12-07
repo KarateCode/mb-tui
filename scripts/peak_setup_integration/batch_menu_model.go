@@ -79,10 +79,6 @@ func NewMenu(integrationMenuChoice IntegrationMenuChoice) BatchModel {
 			prefix,
 		)
 	}
-	// fmt.Printf("showBatchesCmd:\n")
-	// fmt.Printf("%+v\n", showBatchesCmd)
-	// tea.Quit()
-	// panic("just end")
 
 	return BatchModel{
 		isDownloading:  true,
@@ -97,38 +93,17 @@ func (m BatchModel) Init() tea.Cmd {
 
 func doDownload(m BatchModel) tea.Cmd {
 	return func() tea.Msg {
-		// time.Sleep(2 * time.Second)
-
 		host, err := exec.NewClientFromSshConfig("bauer-prod-eu-cf-integration")
 		if err != nil {
 			panic(err)
 		}
 
-		// prefix := "hockey_eu_"
-		// cmd := fmt.Sprintf(
-		// 	`cd /client/EU/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
-		// 	prefix,
-		// )
-		// fmt.Print("Message received!!!")
-		// fmt.Print("Message received!!!")
-		// fmt.Print("Message received!!!")
-		// fmt.Print("Message received!!!")
-		// fmt.Print("Message received!!!")
-		// fmt.Print("Message received!!!")
-		// fmt.Printf("m.showBatchesCmd:\n")
-		// fmt.Printf("%+v\n", m.showBatchesCmd)
-		// panic("just end")
 		output, err := exec.RunRemoteCommand(host, m.showBatchesCmd)
 		if err != nil {
 			panic(err)
 		}
 
-		// fmt.Printf("output:\n")
-		// fmt.Printf("%+v\n", output)
-		// panic("just end")
-
 		lines := downloadCompleteMsg{}
-		// lines := []string{}
 		scanner := bufio.NewScanner(strings.NewReader(string(output)))
 
 		for scanner.Scan() {
@@ -137,10 +112,6 @@ func doDownload(m BatchModel) tea.Cmd {
 				lines = append(lines, line)
 			}
 		}
-
-		// lines := []string{"251203183900", "251203163900", "251203143900", "251203123900", "251203103900"}
-		// fmt.Printf("lines:\n")
-		// fmt.Printf("%+v\n", lines)
 
 		return lines
 	}
@@ -219,31 +190,13 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 			// 	m.selected = string(selected)
 			// 	m.Done = true
 			// }
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("m.list:\n")
-			// fmt.Printf("%+v\n", m.list)
-			// fmt.Printf("selected:\n")
-			// fmt.Printf("%+v\n", selected)
-			// fmt.Printf("ok:\n")
-			// fmt.Printf("%+v\n", ok)
-			// panic("just end")
 
-			// Should be sending tea.Cmd to signal instead of m.Done
-			// m.selected = string(selected)
-			// m.Done = true
 			teaCmd := func() tea.Msg {
 				choice := BatchChoice(m.selected)
 				return choice
 			}
 
 			return m, teaCmd
-			// return m, nil
-			// return m, tea.Quit
 		}
 	}
 
@@ -254,13 +207,6 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 	// Filter list items
 	filter := strings.ToLower(m.filterInput.Value())
 
-	// var filtered []list.Item
-	// for _, b := range m.allBatches {
-	// 	if strings.Contains(strings.ToLower(b), filter) {
-	// 		filtered = append(filtered, item(b))
-	// 	}
-	// }
-	// m.list.SetItems(filtered)
 	if filter != "" {
 		var filtered []list.Item
 		for _, b := range m.allBatches {
@@ -300,7 +246,6 @@ func (m BatchModel) View() string {
 	}
 
 	if m.downloadComplete {
-		// return "✅ Download complete! Press Ctrl+C to exit.\n"
 		return fmt.Sprintf(
 			"✅ Download complete! Press Ctrl+C to exit.\nFilter: %s\n\n%s",
 			m.filterInput.View(),

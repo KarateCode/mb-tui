@@ -7,6 +7,8 @@ import (
 	// "example.com/downloader/batchmenu"
 	// "github.com/charmbracelet/bubbles/progress"
 	// batchmenu "example.com/downloader/batchmenu"
+	"fmt"
+
 	downloader "example.com/downloader/tui/downloader"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,18 +20,23 @@ const (
 	stepBatchMenu
 	stepCopyingBatchFiles
 	stepDownloading
+	stepCleanServerFiles
 )
 
 type IntegrationMenuChoice string
 type BatchChoice string
 type copyCompleteMsg []string
+type cleanServerCompleteMsg string
 type Model struct {
-	step            step
-	integrationMenu IntegrationMenuModel
-	batchMenu       BatchModel
-	copyBatchFiles  CopyBatchFilesModel
-	downloader      downloader.Model
-	Program         *tea.Program
+	step             step
+	integrationMenu  IntegrationMenuModel
+	batchMenu        BatchModel
+	copyBatchFiles   CopyBatchFilesModel
+	downloader       downloader.Model
+	cleanServerFiles CleanServerFilesModel
+
+	batchChoice string
+	Program     *tea.Program
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -55,6 +62,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case BatchChoice:
 		choice := string(msg)
+		m.batchChoice = choice
 		m.copyBatchFiles = NewCopyBatchFilesModel(choice)
 		m.step = stepCopyingBatchFiles
 		return m, m.copyBatchFiles.Init()
@@ -67,6 +75,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.step = stepDownloading
 		return m, downloadFiles
+
+	case cleanServerCompleteMsg:
+		fmt.Print("Download (app) complete!")
+		return m, tea.Quit
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -85,22 +97,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stepBatchMenu:
 		var cmd tea.Cmd
 		m.batchMenu, cmd = m.batchMenu.Update(msg)
-
-		// When batch is chosen -> transition
-		// if m.batchMenu.Done {
-		// 	fileNames := []string{
-		// 		"hockey_eu_product.251103012539.csv",
-		// 		"hockey_eu_pricing.251103012539.csv",
-		// 		"hockey_eu_sku.251103012539.csv",
-		// 	}
-		// 	m.downloader = downloader.NewModel(fileNames)
-		// 	downloadFiles := func() tea.Msg {
-		// 		return downloader.DownloadFiles(fileNames, m.Program)
-		// 	}
-		// 	m.step = stepDownloading
-		// 	return m, downloadFiles
-		// }
-
 		return m, cmd
 
 	case stepCopyingBatchFiles:
@@ -112,8 +108,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.downloader, cmd = m.downloader.Update(msg)
 
+		// This one's the exception to the rule, moving to next step here because of progress bar's weird paradigm
 		if m.downloader.Done {
-			return m, tea.Quit
+			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice)
+			m.step = stepCleanServerFiles
+			return m, m.cleanServerFiles.Init()
 		}
 
 		return m, cmd
@@ -136,6 +135,9 @@ func (m *Model) View() string {
 
 	case stepDownloading:
 		return m.downloader.View()
+
+	case stepCleanServerFiles:
+		return m.cleanServerFiles.View()
 
 	default:
 		return "unknown state"
