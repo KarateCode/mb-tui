@@ -9,26 +9,26 @@ import (
 
 type CleanServerFilesModel struct {
 	batchNumber string
+	prefix      string
 }
 
-func NewCleanServerFilesModel(batchNumber string) CleanServerFilesModel {
+func NewCleanServerFilesModel(batchNumber string, prefix string) CleanServerFilesModel {
 	return CleanServerFilesModel{
 		batchNumber: batchNumber,
+		prefix:      prefix,
 	}
 }
 
 func (m CleanServerFilesModel) Init() tea.Cmd {
 	return func() tea.Msg {
-
 		host, err := exec.NewClientFromSshConfig("bauer-prod-eu-cf-integration")
 		if err != nil {
 			panic(err)
 		}
 
-		prefix := "hockey_eu_"
 		cmd := fmt.Sprintf(
 			"cd /client/dump; rm %s*%s.*",
-			prefix,
+			m.prefix,
 			m.batchNumber,
 		)
 

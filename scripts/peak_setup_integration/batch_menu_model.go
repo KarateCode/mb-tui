@@ -28,6 +28,7 @@ type BatchModel struct {
 	filterInput textinput.Model
 	list        list.Model
 
+	prefix           string
 	isDownloading    bool
 	downloadComplete bool
 	showBatchesCmd   string
@@ -59,13 +60,12 @@ func getRequestedFileExtensions(choice string) []string {
 	return nil
 }
 
-func NewMenu(integrationMenuChoice IntegrationMenuChoice) BatchModel {
+func NewMenu(integrationMenuChoice IntegrationMenuChoice, prefix string) BatchModel {
 	choice := string(integrationMenuChoice)
 	giveMeEverything := bool(choice == "Nope! Give me them all")
 	requestedFileExtensions := getRequestedFileExtensions(choice)
 
 	var showBatchesCmd string
-	prefix := "hockey_eu_"
 	if giveMeEverything {
 		showBatchesCmd = fmt.Sprintf(
 			`cd /client/EU/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
@@ -81,6 +81,7 @@ func NewMenu(integrationMenuChoice IntegrationMenuChoice) BatchModel {
 	}
 
 	return BatchModel{
+		prefix:         prefix,
 		isDownloading:  true,
 		showBatchesCmd: showBatchesCmd,
 		Done:           false,

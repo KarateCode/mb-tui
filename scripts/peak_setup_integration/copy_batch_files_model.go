@@ -11,11 +11,13 @@ import (
 
 type CopyBatchFilesModel struct {
 	batchNumber string
+	prefix      string
 }
 
-func NewCopyBatchFilesModel(batchNumber string) CopyBatchFilesModel {
+func NewCopyBatchFilesModel(batchNumber string, prefix string) CopyBatchFilesModel {
 	return CopyBatchFilesModel{
 		batchNumber: batchNumber,
+		prefix:      prefix,
 	}
 }
 
@@ -27,12 +29,11 @@ func (m CopyBatchFilesModel) Init() tea.Cmd {
 			panic(err)
 		}
 
-		prefix := "hockey_eu_"
 		cmd := fmt.Sprintf(
 			`cd /client/EU/archive; cp %s*%s.* /client/dump; cd /client/dump; ls %s*%s.*`,
-			prefix,
+			m.prefix,
 			m.batchNumber,
-			prefix,
+			m.prefix,
 			m.batchNumber,
 		)
 

@@ -32,6 +32,7 @@ type cleanServerCompleteMsg string
 type Model struct {
 	step             step
 	peakEnvMenu      EnvMenuModel
+	prefix           string
 	integrationMenu  IntegrationMenuModel
 	batchMenu        BatchModel
 	copyBatchFiles   CopyBatchFilesModel
@@ -55,26 +56,38 @@ func NewModel() *Model {
 	}
 }
 
+func calcPrefix(clientCode string) string {
+	if clientCode == "cascade-na" {
+		return "lax_"
+	} else if clientCode == "bauer-na" {
+		return "hockey_na_"
+	} else if clientCode == "bauer-eu" {
+		return "hockey_eu_"
+	}
+	return "hockey_eu_"
+}
+
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case EnvMenuChoice:
 		choice := peakEnv(msg)
 		m.envMenuChoice = choice
+		m.prefix = calcPrefix(choice.clientCode)
 		m.integrationMenu = NewIntegrationMenu()
 		m.step = stepIntegrationMenu
 		return m, m.integrationMenu.Init()
 
 	case IntegrationMenuChoice:
 		choice := IntegrationMenuChoice(msg)
-		m.batchMenu = NewMenu(choice)
+		m.batchMenu = NewMenu(choice, m.prefix)
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
 	case BatchChoice:
 		choice := string(msg)
 		m.batchChoice = choice
-		m.copyBatchFiles = NewCopyBatchFilesModel(choice)
+		m.copyBatchFiles = NewCopyBatchFilesModel(choice, m.prefix)
 		m.step = stepCopyingBatchFiles
 		return m, m.copyBatchFiles.Init()
 
@@ -126,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// This one's the exception to the rule, moving to next step here because of progress bar's weird paradigm
 		if m.downloader.Done {
-			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice)
+			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice, m.prefix)
 			m.step = stepCleanServerFiles
 			return m, m.cleanServerFiles.Init()
 		}

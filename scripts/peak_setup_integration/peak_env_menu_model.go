@@ -102,7 +102,7 @@ func NewEnvMenu() EnvMenuModel {
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
 
-	l := list.New(items, delegate, 50, 40) // WIDTH=50, HEIGHT=20 rows
+	l := list.New(items, delegate, 50, 10) // WIDTH, HEIGHT
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
