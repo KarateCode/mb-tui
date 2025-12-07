@@ -16,7 +16,8 @@ import (
 type step int
 
 const (
-	stepIntegrationMenu step = iota
+	stepEnvMenu step = iota
+	stepIntegrationMenu
 	stepBatchMenu
 	stepCopyingBatchFiles
 	stepDownloading
@@ -25,18 +26,21 @@ const (
 
 type IntegrationMenuChoice string
 type BatchChoice string
+type EnvMenuChoice peakEnv
 type copyCompleteMsg []string
 type cleanServerCompleteMsg string
 type Model struct {
 	step             step
+	peakEnvMenu      EnvMenuModel
 	integrationMenu  IntegrationMenuModel
 	batchMenu        BatchModel
 	copyBatchFiles   CopyBatchFilesModel
 	downloader       downloader.Model
 	cleanServerFiles CleanServerFilesModel
 
-	batchChoice string
-	Program     *tea.Program
+	batchChoice   string
+	envMenuChoice peakEnv
+	Program       *tea.Program
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -44,15 +48,22 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func NewModel() *Model {
-	m := NewIntegrationMenu()
+	m := NewEnvMenu()
 	return &Model{
-		step:            0,
-		integrationMenu: m,
+		step:        0,
+		peakEnvMenu: m,
 	}
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+
+	case EnvMenuChoice:
+		choice := peakEnv(msg)
+		m.envMenuChoice = choice
+		m.integrationMenu = NewIntegrationMenu()
+		m.step = stepIntegrationMenu
+		return m, m.integrationMenu.Init()
 
 	case IntegrationMenuChoice:
 		choice := IntegrationMenuChoice(msg)
@@ -89,6 +100,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch m.step {
 
+	case stepEnvMenu:
+		var cmd tea.Cmd
+		m.peakEnvMenu, cmd = m.peakEnvMenu.Update(msg)
+		return m, cmd
+
 	case stepIntegrationMenu:
 		var cmd tea.Cmd
 		m.integrationMenu, cmd = m.integrationMenu.Update(msg)
@@ -123,6 +139,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	switch m.step {
+
+	case stepEnvMenu:
+		return m.peakEnvMenu.View()
 
 	case stepIntegrationMenu:
 		return m.integrationMenu.View()
