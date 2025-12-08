@@ -9,6 +9,7 @@ import (
 	// batchmenu "example.com/downloader/batchmenu"
 	// "fmt"
 
+	tui "example.com/downloader/tui"
 	downloader "example.com/downloader/tui/downloader"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -36,7 +37,7 @@ type Model struct {
 	peakEnvMenu EnvMenuModel
 	prefix      string
 
-	integrationMenu  IntegrationMenuModel
+	integrationMenu  tui.MenuModel
 	calcBatches      calculateBatchesModel
 	batchMenu        BatchModel
 	copyBatchFiles   CopyBatchFilesModel
@@ -78,7 +79,25 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		choice := peakEnv(msg)
 		m.envMenuChoice = choice
 		m.prefix = calcPrefix(choice.clientCode)
-		m.integrationMenu = NewIntegrationMenu()
+		// m.integrationMenu = NewIntegrationMenu()
+		m.integrationMenu = tui.NewMenu(
+			[]string{
+				"Nope! Give me them all",
+				"Product Import",
+				"Customer Import",
+				"Inventory Import",
+				"SalesRep Import",
+				"BG/BHC import",
+				"SalesOrg/PoType Import",
+			},
+			func(selected string) tea.Cmd {
+				teaCmd := func() tea.Msg {
+					choice := IntegrationMenuChoice(selected)
+					return choice
+				}
+				return teaCmd
+			},
+		)
 		m.step = stepIntegrationMenu
 		return m, m.integrationMenu.Init()
 

@@ -10,15 +10,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// Can we resue all this as just a 'menuItem' type for all my menus?
-// type batchItem string
-// func (i batchItem) Title() string       { return string(i) }
-// func (i batchItem) Description() string { return "" }
-// func (i batchItem) FilterValue() string { return string(i) }
+type item string
 
-// type (
-// 	downloadCompleteMsg []string
-// )
+func (i item) Title() string       { return string(i) }
+func (i item) Description() string { return "" }
+func (i item) FilterValue() string { return string(i) }
+
+// itemsFrom converts []string -> []list.Item
+func itemsFrom(batches []string) []list.Item {
+	items := make([]list.Item, 0, len(batches))
+	for _, b := range batches {
+		items = append(items, item(b))
+	}
+	return items
+}
 
 type EnvMenuModel struct {
 	allEnvs     peakEnvs

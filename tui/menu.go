@@ -1,4 +1,4 @@
-package peak_setup_integration
+package tui
 
 import (
 	"fmt"
@@ -16,31 +16,22 @@ func (i item) Title() string       { return string(i) }
 func (i item) Description() string { return "" }
 func (i item) FilterValue() string { return string(i) }
 
-type IntegrationMenuModel struct {
-	allBatches  []string
+type TeaCmdCallback func(selected string) tea.Cmd
+
+type MenuModel struct {
+	allOptions  []string
 	filterInput textinput.Model
 	list        list.Model
+	emitChoice  TeaCmdCallback
 
 	Done     bool
 	quitting bool
 	selected string
 }
 
-func NewIntegrationMenu() IntegrationMenuModel {
+func NewMenu(options []string, callback TeaCmdCallback) MenuModel {
 	// message: 'Would you like to trim files to a certain import?',
-	fileTypes := []string{
-		"Nope! Give me them all",
-		"Product Import",
-		"Customer Import",
-		"Inventory Import",
-		"SalesRep Import",
-		"BG/BHC import",
-		"SalesOrg/PoType Import",
-	}
-	items := make([]list.Item, len(fileTypes))
-	for i, s := range fileTypes {
-		items[i] = item(s)
-	}
+	items := itemsFrom(options)
 
 	// Text input
 	ti := textinput.New()
@@ -62,29 +53,29 @@ func NewIntegrationMenu() IntegrationMenuModel {
 
 	l.Styles.Title = lipgloss.NewStyle()
 
-	return IntegrationMenuModel{
-		allBatches:  fileTypes,
+	return MenuModel{
+		allOptions:  options,
 		filterInput: ti,
 		list:        l,
+		emitChoice:  callback,
 		Done:        false,
 	}
 
 }
 
-func (m IntegrationMenuModel) Init() tea.Cmd {
+func (m MenuModel) Init() tea.Cmd {
 	return nil
 }
 
-// itemsFrom converts []string -> []list.Item
-func itemsFrom(batches []string) []list.Item {
-	items := make([]list.Item, 0, len(batches))
-	for _, b := range batches {
+func itemsFrom(options []string) []list.Item {
+	items := make([]list.Item, 0, len(options))
+	for _, b := range options {
 		items = append(items, item(b))
 	}
 	return items
 }
 
-func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd) {
+func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.KeyMsg:
@@ -105,10 +96,11 @@ func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
 				// m.Done = true
-				teaCmd := func() tea.Msg {
-					choice := IntegrationMenuChoice(m.selected)
-					return choice
-				}
+				teaCmd := m.emitChoice(m.selected)
+				// teaCmd := func() tea.Msg {
+				// 	choice := IntegrationMenuChoice(m.selected)
+				// 	return choice
+				// }
 
 				return m, teaCmd
 			}
@@ -127,7 +119,7 @@ func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd
 
 	if filter != "" {
 		var filtered []list.Item
-		for _, b := range m.allBatches {
+		for _, b := range m.allOptions {
 			if strings.Contains(strings.ToLower(b), filter) {
 				filtered = append(filtered, item(b))
 			}
@@ -135,7 +127,7 @@ func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd
 		m.list.SetItems(filtered)
 	} else {
 		// Only reset when returning to full list
-		m.list.SetItems(itemsFrom(m.allBatches))
+		m.list.SetItems(itemsFrom(m.allOptions))
 	}
 
 	// Update list
@@ -144,7 +136,7 @@ func (m IntegrationMenuModel) Update(msg tea.Msg) (IntegrationMenuModel, tea.Cmd
 	return m, cmd
 }
 
-func (m IntegrationMenuModel) View() string {
+func (m MenuModel) View() string {
 	if m.quitting {
 		return ""
 	}
