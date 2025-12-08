@@ -28,7 +28,7 @@ type BatchModel struct {
 	filterInput textinput.Model
 	list        list.Model
 
-	prefix           string
+	peakEnv          peakEnv
 	isDownloading    bool
 	downloadComplete bool
 	showBatchesCmd   string
@@ -60,28 +60,30 @@ func getRequestedFileExtensions(choice string) []string {
 	return nil
 }
 
-func NewMenu(integrationMenuChoice IntegrationMenuChoice, prefix string) BatchModel {
+func NewMenu(integrationMenuChoice IntegrationMenuChoice, env peakEnv) BatchModel {
 	choice := string(integrationMenuChoice)
 	giveMeEverything := bool(choice == "Nope! Give me them all")
 	requestedFileExtensions := getRequestedFileExtensions(choice)
 
+	prefix := calcPrefix(env.clientCode)
 	var showBatchesCmd string
 	if giveMeEverything {
 		showBatchesCmd = fmt.Sprintf(
-			`cd /client/EU/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
-			// One day implement env.subFolder
+			`cd /client/%s/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
+			env.subFolder,
 			prefix,
 		)
 	} else {
 		showBatchesCmd = fmt.Sprintf(
-			`cd /client/EU/archive; ls *%s* | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 20 | tac`,
+			`cd /client/%s/archive; ls *%s* | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 20 | tac`,
+			env.subFolder,
 			requestedFileExtensions[0],
 			prefix,
 		)
 	}
 
 	return BatchModel{
-		prefix:         prefix,
+		peakEnv:        env,
 		isDownloading:  true,
 		showBatchesCmd: showBatchesCmd,
 		Done:           false,
@@ -94,7 +96,7 @@ func (m BatchModel) Init() tea.Cmd {
 
 func doDownload(m BatchModel) tea.Cmd {
 	return func() tea.Msg {
-		host, err := exec.NewClientFromSshConfig("bauer-prod-eu-cf-integration")
+		host, err := exec.NewClientFromSshConfig(m.peakEnv.sshServer)
 		if err != nil {
 			panic(err)
 		}
@@ -159,9 +161,6 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 		batchModel.isDownloading = false
 		batchModel.downloadComplete = true
 		return batchModel, nil
-		// m.isDownloading = false
-		// m.downloadComplete = true
-		// return m, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {

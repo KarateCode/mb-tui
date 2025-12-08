@@ -17,8 +17,7 @@ type ProgressCallback func(downloaded int64)
 type SetTotalCallback func(downloaded int64)
 type SetDoneCallback func()
 
-func DownloadFiles(fileNames []string, p *tea.Program) tea.Msg {
-	const sshAlias = "bauer-prod-eu-cf-integration"
+func DownloadFiles(fileNames []string, sshAlias string, p *tea.Program) tea.Msg {
 	// fmt.Printf("Downloading from: %+v\n", sshAlias)
 
 	for i, fileName := range fileNames {

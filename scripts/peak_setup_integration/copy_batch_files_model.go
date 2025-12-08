@@ -11,29 +11,31 @@ import (
 
 type CopyBatchFilesModel struct {
 	batchNumber string
-	prefix      string
+	peakEnv     peakEnv
 }
 
-func NewCopyBatchFilesModel(batchNumber string, prefix string) CopyBatchFilesModel {
+func NewCopyBatchFilesModel(batchNumber string, env peakEnv) CopyBatchFilesModel {
 	return CopyBatchFilesModel{
 		batchNumber: batchNumber,
-		prefix:      prefix,
+		peakEnv:     env,
 	}
 }
 
 func (m CopyBatchFilesModel) Init() tea.Cmd {
 	return func() tea.Msg {
 
-		host, err := exec.NewClientFromSshConfig("bauer-prod-eu-cf-integration")
+		host, err := exec.NewClientFromSshConfig(m.peakEnv.sshServer)
 		if err != nil {
 			panic(err)
 		}
 
+		prefix := calcPrefix(m.peakEnv.clientCode)
 		cmd := fmt.Sprintf(
-			`cd /client/EU/archive; cp %s*%s.* /client/dump; cd /client/dump; ls %s*%s.*`,
-			m.prefix,
+			`cd /client/%s/archive; cp %s*%s.* /client/dump; cd /client/dump; ls %s*%s.*`,
+			m.peakEnv.subFolder,
+			prefix,
 			m.batchNumber,
-			m.prefix,
+			prefix,
 			m.batchNumber,
 		)
 

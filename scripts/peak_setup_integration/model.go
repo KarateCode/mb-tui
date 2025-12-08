@@ -81,14 +81,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case IntegrationMenuChoice:
 		choice := IntegrationMenuChoice(msg)
-		m.batchMenu = NewMenu(choice, m.prefix)
+		m.batchMenu = NewMenu(choice, m.envMenuChoice)
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
 	case BatchChoice:
 		choice := string(msg)
 		m.batchChoice = choice
-		m.copyBatchFiles = NewCopyBatchFilesModel(choice, m.prefix)
+		m.copyBatchFiles = NewCopyBatchFilesModel(choice, m.envMenuChoice)
 		m.step = stepCopyingBatchFiles
 		return m, m.copyBatchFiles.Init()
 
@@ -96,13 +96,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		fileNames := []string(msg)
 		m.downloader = downloader.NewModel(fileNames)
 		downloadFiles := func() tea.Msg {
-			return downloader.DownloadFiles(fileNames, m.Program)
+			return downloader.DownloadFiles(fileNames, m.envMenuChoice.sshServer, m.Program)
 		}
 		m.step = stepDownloading
 		return m, downloadFiles
 
 	case cleanServerCompleteMsg:
-		// fmt.Print("Download (app) complete!")
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -140,7 +139,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// This one's the exception to the rule, moving to next step here because of progress bar's weird paradigm
 		if m.downloader.Done {
-			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice, m.prefix)
+			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice, m.envMenuChoice)
 			m.step = stepCleanServerFiles
 			return m, m.cleanServerFiles.Init()
 		}

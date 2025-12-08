@@ -9,26 +9,27 @@ import (
 
 type CleanServerFilesModel struct {
 	batchNumber string
-	prefix      string
+	peakEnv     peakEnv
 }
 
-func NewCleanServerFilesModel(batchNumber string, prefix string) CleanServerFilesModel {
+func NewCleanServerFilesModel(batchNumber string, env peakEnv) CleanServerFilesModel {
 	return CleanServerFilesModel{
 		batchNumber: batchNumber,
-		prefix:      prefix,
+		peakEnv:     env,
 	}
 }
 
 func (m CleanServerFilesModel) Init() tea.Cmd {
 	return func() tea.Msg {
-		host, err := exec.NewClientFromSshConfig("bauer-prod-eu-cf-integration")
+		host, err := exec.NewClientFromSshConfig(m.peakEnv.sshServer)
 		if err != nil {
 			panic(err)
 		}
 
+		prefix := calcPrefix(m.peakEnv.clientCode)
 		cmd := fmt.Sprintf(
 			"cd /client/dump; rm %s*%s.*",
-			m.prefix,
+			prefix,
 			m.batchNumber,
 		)
 
