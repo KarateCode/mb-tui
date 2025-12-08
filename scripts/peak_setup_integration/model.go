@@ -29,12 +29,12 @@ const (
 
 type IntegrationMenuChoice string
 type BatchChoice string
-type EnvMenuChoice peakEnv
+type EnvMenuChoice string
 type copyCompleteMsg []string
 type cleanServerCompleteMsg string
 type Model struct {
 	step        step
-	peakEnvMenu EnvMenuModel
+	peakEnvMenu tui.MenuModel
 	prefix      string
 
 	integrationMenu  tui.MenuModel
@@ -54,7 +54,21 @@ func (m *Model) Init() tea.Cmd {
 }
 
 func NewModel() *Model {
-	m := NewEnvMenu()
+	envs := environments()
+	names := make([]string, len(envs))
+	for i, s := range envs {
+		names[i] = s.name
+	}
+	m := tui.NewMenu(
+		names,
+		func(selected string) tea.Cmd {
+			teaCmd := func() tea.Msg {
+				choice := EnvMenuChoice(selected)
+				return choice
+			}
+			return teaCmd
+		},
+	)
 	return &Model{
 		step:        0,
 		peakEnvMenu: m,
@@ -76,10 +90,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case EnvMenuChoice:
-		choice := peakEnv(msg)
-		m.envMenuChoice = choice
-		m.prefix = calcPrefix(choice.clientCode)
-		// m.integrationMenu = NewIntegrationMenu()
+		selected := string(msg)
+
+		foundEnv, _ := findEnvByName(environments(), selected)
+		m.envMenuChoice = foundEnv
+		m.prefix = calcPrefix(foundEnv.clientCode)
 		m.integrationMenu = tui.NewMenu(
 			[]string{
 				"Nope! Give me them all",
