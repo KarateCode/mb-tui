@@ -123,22 +123,13 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 		m.list.SetItems(filtered)
 	} else {
 		// Only reset when returning to full list
-		m.list.SetItems(batchItemsFrom(m.allBatches))
+		m.list.SetItems(itemsFrom(m.allBatches))
 	}
 
 	// Update list
 	m.list, _ = m.list.Update(msg)
 
 	return m, cmd
-}
-
-// itemsFrom converts []string -> []list.Item
-func batchItemsFrom(batches []string) []list.Item {
-	items := make([]list.Item, 0, len(batches))
-	for _, b := range batches {
-		items = append(items, item(b))
-	}
-	return items
 }
 
 func (m BatchModel) View() string {
