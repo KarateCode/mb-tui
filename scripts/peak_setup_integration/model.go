@@ -32,6 +32,8 @@ type BatchChoice string
 type EnvMenuChoice string
 type copyCompleteMsg []string
 type cleanServerCompleteMsg string
+type calcBatchesCompleteMsg []string
+
 type Model struct {
 	step        step
 	peakEnvMenu tui.MenuModel
@@ -39,7 +41,7 @@ type Model struct {
 
 	integrationMenu  tui.MenuModel
 	calcBatches      calculateBatchesModel
-	batchMenu        BatchModel
+	batchMenu        tui.MenuModel
 	copyBatchFiles   CopyBatchFilesModel
 	downloader       downloader.Model
 	cleanServerFiles CleanServerFilesModel
@@ -59,6 +61,7 @@ func NewModel() *Model {
 	for i, s := range envs {
 		names[i] = s.name
 	}
+
 	m := tui.NewMenu(
 		names,
 		func(selected string) tea.Cmd {
@@ -69,6 +72,7 @@ func NewModel() *Model {
 			return teaCmd
 		},
 	)
+
 	return &Model{
 		step:        0,
 		peakEnvMenu: m,
@@ -124,7 +128,16 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case calcBatchesCompleteMsg:
 		lines := calcBatchesCompleteMsg(msg)
-		m.batchMenu = NewMenu(lines)
+		m.batchMenu = tui.NewMenu(
+			lines,
+			func(selected string) tea.Cmd {
+				teaCmd := func() tea.Msg {
+					choice := BatchChoice(selected)
+					return choice
+				}
+				return teaCmd
+			},
+		)
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
