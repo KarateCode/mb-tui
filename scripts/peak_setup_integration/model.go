@@ -19,6 +19,7 @@ type step int
 const (
 	stepEnvMenu step = iota
 	stepIntegrationMenu
+	stepCalcBatches
 	stepBatchMenu
 	stepCopyingBatchFiles
 	stepDownloading
@@ -31,10 +32,12 @@ type EnvMenuChoice peakEnv
 type copyCompleteMsg []string
 type cleanServerCompleteMsg string
 type Model struct {
-	step             step
-	peakEnvMenu      EnvMenuModel
-	prefix           string
+	step        step
+	peakEnvMenu EnvMenuModel
+	prefix      string
+
 	integrationMenu  IntegrationMenuModel
+	calcBatches      calculateBatchesModel
 	batchMenu        BatchModel
 	copyBatchFiles   CopyBatchFilesModel
 	downloader       downloader.Model
@@ -81,7 +84,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case IntegrationMenuChoice:
 		choice := IntegrationMenuChoice(msg)
-		m.batchMenu = NewMenu(choice, m.envMenuChoice)
+		m.calcBatches = NewCalculateBatchesModel(choice, m.envMenuChoice)
+		m.step = stepCalcBatches
+		return m, m.calcBatches.Init()
+
+	case calcBatchesCompleteMsg:
+		lines := calcBatchesCompleteMsg(msg)
+		m.batchMenu = NewMenu(lines)
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
@@ -176,6 +185,9 @@ func (m *Model) View() string {
 
 	case stepIntegrationMenu:
 		body = m.integrationMenu.View()
+
+	case stepCalcBatches:
+		body = m.calcBatches.View()
 
 	case stepBatchMenu:
 		body = m.batchMenu.View()

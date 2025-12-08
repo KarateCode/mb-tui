@@ -1,12 +1,9 @@
 package peak_setup_integration
 
 import (
-	"bufio"
 	"fmt"
 	"strings"
-	// "time"
 
-	exec "example.com/downloader/exec"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -20,7 +17,7 @@ func (i batchItem) Description() string { return "" }
 func (i batchItem) FilterValue() string { return string(i) }
 
 type (
-	downloadCompleteMsg []string
+	calcBatchesCompleteMsg []string
 )
 
 type BatchModel struct {
@@ -28,99 +25,16 @@ type BatchModel struct {
 	filterInput textinput.Model
 	list        list.Model
 
-	peakEnv          peakEnv
-	isDownloading    bool
-	downloadComplete bool
-	showBatchesCmd   string
+	isDownloading          bool
+	calcBatchesCompleteMsg bool
+	showBatchesCmd         string
 
 	Done     bool
 	quitting bool
 	selected string
 }
 
-func getRequestedFileExtensions(choice string) []string {
-	if choice == "Inventory Import" {
-		return []string{"inventory"}
-	} else if choice == "BG/BHC import" {
-		return []string{"bg_bhc"}
-	} else if choice == "SalesOrg/PoType Import" {
-		return []string{"salesorg_po_type"}
-	} else if choice == "Customer Import" {
-		return []string{"customer"}
-	} else if choice == "Product Import" {
-		return []string{
-			"product",
-			"sku",
-			"pricing",
-		}
-	} else if choice == "SalesRep Import" {
-		return []string{"salesrep"}
-	}
-
-	return nil
-}
-
-func NewMenu(integrationMenuChoice IntegrationMenuChoice, env peakEnv) BatchModel {
-	choice := string(integrationMenuChoice)
-	giveMeEverything := bool(choice == "Nope! Give me them all")
-	requestedFileExtensions := getRequestedFileExtensions(choice)
-
-	prefix := calcPrefix(env.clientCode)
-	var showBatchesCmd string
-	if giveMeEverything {
-		showBatchesCmd = fmt.Sprintf(
-			`cd /client/%s/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
-			env.subFolder,
-			prefix,
-		)
-	} else {
-		showBatchesCmd = fmt.Sprintf(
-			`cd /client/%s/archive; ls *%s* | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 20 | tac`,
-			env.subFolder,
-			requestedFileExtensions[0],
-			prefix,
-		)
-	}
-
-	return BatchModel{
-		peakEnv:        env,
-		isDownloading:  true,
-		showBatchesCmd: showBatchesCmd,
-		Done:           false,
-	}
-}
-
-func (m BatchModel) Init() tea.Cmd {
-	return doDownload(m)
-}
-
-func doDownload(m BatchModel) tea.Cmd {
-	return func() tea.Msg {
-		host, err := exec.NewClientFromSshConfig(m.peakEnv.sshServer)
-		if err != nil {
-			panic(err)
-		}
-
-		output, err := exec.RunRemoteCommand(host, m.showBatchesCmd)
-		if err != nil {
-			panic(err)
-		}
-
-		lines := downloadCompleteMsg{}
-		scanner := bufio.NewScanner(strings.NewReader(string(output)))
-
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-			if line != "" {
-				lines = append(lines, line)
-			}
-		}
-
-		return lines
-	}
-}
-
-func setListItems(m BatchModel, lines downloadCompleteMsg) BatchModel {
+func NewMenu(lines calcBatchesCompleteMsg) BatchModel {
 	// Convert to list items
 	items := make([]list.Item, len(lines))
 	for i, s := range lines {
@@ -138,7 +52,7 @@ func setListItems(m BatchModel, lines downloadCompleteMsg) BatchModel {
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
 
-	l := list.New(items, delegate, 50, 40) // WIDTH=50, HEIGHT=20 rows
+	l := list.New(items, delegate, 50, 40) // WIDTH, HEIGHT
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
@@ -147,20 +61,20 @@ func setListItems(m BatchModel, lines downloadCompleteMsg) BatchModel {
 
 	l.Styles.Title = lipgloss.NewStyle()
 
-	m.allBatches = lines
-	m.filterInput = ti
-	m.list = l
-	return m
+	return BatchModel{
+		allBatches:  lines,
+		filterInput: ti,
+		list:        l,
+		Done:        false,
+	}
+}
+
+func (m BatchModel) Init() tea.Cmd {
+	return nil
 }
 
 func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 	switch msg := msg.(type) {
-
-	case downloadCompleteMsg:
-		batchModel := setListItems(m, msg)
-		batchModel.isDownloading = false
-		batchModel.downloadComplete = true
-		return batchModel, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -181,15 +95,7 @@ func (m BatchModel) Update(msg tea.Msg) (BatchModel, tea.Cmd) {
 
 		case "enter":
 			selected := fmt.Sprintf("%+v", m.list.SelectedItem())
-			// selected, ok := m.list.SelectedItem().(batchItem)
-			// if ok {
 			m.selected = string(selected)
-			// m.Done = true
-			// }
-			// if selected, ok := m.list.SelectedItem().(batchItem); ok {
-			// 	m.selected = string(selected)
-			// 	m.Done = true
-			// }
 
 			teaCmd := func() tea.Msg {
 				choice := BatchChoice(m.selected)
@@ -240,20 +146,11 @@ func (m BatchModel) View() string {
 		return ""
 	}
 
-	if m.isDownloading {
-		return "\n\nCalculating batches..."
-		// return fmt.Sprintf("%s Downloading file...", m.spinner.View())
-	}
-
-	if m.downloadComplete {
-		return fmt.Sprintf(
-			"✅ Download complete! Press Ctrl+C to exit.\nFilter: %s\n\n%s",
-			m.filterInput.View(),
-			m.list.View(),
-		)
-	}
-
-	return "unknown state from batchmenu.model"
+	return fmt.Sprintf(
+		"\n\n✅ Download complete! Press Ctrl+C to exit.\nFilter: %s\n\n%s",
+		m.filterInput.View(),
+		m.list.View(),
+	)
 }
 
 func (m BatchModel) Selected() string {
