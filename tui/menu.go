@@ -24,8 +24,6 @@ type MenuModel struct {
 	list        list.Model
 	emitChoice  TeaCmdCallback
 
-	Done     bool
-	quitting bool
 	selected string
 }
 
@@ -58,7 +56,6 @@ func NewMenu(options []string, callback TeaCmdCallback) MenuModel {
 		filterInput: ti,
 		list:        l,
 		emitChoice:  callback,
-		Done:        false,
 	}
 
 }
@@ -81,7 +78,6 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "esc":
-			m.quitting = true
 			return m, tea.Quit
 
 		case "ctrl+n":
@@ -95,7 +91,6 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
-				// m.Done = true
 				teaCmd := m.emitChoice(m.selected)
 				// teaCmd := func() tea.Msg {
 				// 	choice := IntegrationMenuChoice(m.selected)
@@ -137,10 +132,6 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 }
 
 func (m MenuModel) View() string {
-	if m.quitting {
-		return ""
-	}
-
 	return fmt.Sprintf(
 		"Filter: %s\n\n%s",
 		m.filterInput.View(),
