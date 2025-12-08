@@ -19,7 +19,7 @@ type SetDoneCallback func()
 
 func DownloadFiles(fileNames []string, p *tea.Program) tea.Msg {
 	const sshAlias = "bauer-prod-eu-cf-integration"
-	fmt.Printf("Downloading from: %+v\n", sshAlias)
+	// fmt.Printf("Downloading from: %+v\n", sshAlias)
 
 	for i, fileName := range fileNames {
 		cwd, _ := os.Getwd()

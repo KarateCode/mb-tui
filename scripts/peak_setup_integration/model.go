@@ -7,10 +7,11 @@ import (
 	// "example.com/downloader/batchmenu"
 	// "github.com/charmbracelet/bubbles/progress"
 	// batchmenu "example.com/downloader/batchmenu"
-	"fmt"
+	// "fmt"
 
 	downloader "example.com/downloader/tui/downloader"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type step int
@@ -101,7 +102,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, downloadFiles
 
 	case cleanServerCompleteMsg:
-		fmt.Print("Download (app) complete!")
+		// fmt.Print("Download (app) complete!")
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -151,27 +152,48 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	width := 80 // or get from Bubble Tea window size messages
+	title := lipgloss.Place(
+		width,
+		1,
+		lipgloss.Center,
+		lipgloss.Center,
+		lipgloss.NewStyle().
+			Bold(true).
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(lipgloss.Color("63")). // blue-ish
+			Foreground(lipgloss.Color("#FFA500")).  // orange
+			// Foreground(lipgloss.Color("#94E2D5")). // light teal
+			Padding(0, 1).
+			Render("  Peak Integration Setup  "),
+	)
+
+	// 2. Render active submodel
+	var body string
 	switch m.step {
 
 	case stepEnvMenu:
-		return m.peakEnvMenu.View()
+		body = m.peakEnvMenu.View()
 
 	case stepIntegrationMenu:
-		return m.integrationMenu.View()
+		body = m.integrationMenu.View()
 
 	case stepBatchMenu:
-		return m.batchMenu.View()
+		body = m.batchMenu.View()
 
 	case stepCopyingBatchFiles:
-		return m.copyBatchFiles.View()
+		body = m.copyBatchFiles.View()
 
 	case stepDownloading:
-		return m.downloader.View()
+		body = m.downloader.View()
 
 	case stepCleanServerFiles:
-		return m.cleanServerFiles.View()
+		body = m.cleanServerFiles.View()
 
 	default:
-		return "unknown state"
+		body = "unknown state"
 	}
+
+	// 3. Stack title + body vertically
+	return lipgloss.JoinVertical(lipgloss.Left, title, body)
 }

@@ -149,14 +149,14 @@ func (m EnvMenuModel) Update(msg tea.Msg) (EnvMenuModel, tea.Cmd) {
 			foundEnv, found := findEnvByName(m.allEnvs, selected)
 
 			if found {
-				fmt.Printf("Found environment: %+v\n", foundEnv)
+				// fmt.Printf("Found environment: %+v\n", foundEnv)
 				teaCmd := func() tea.Msg {
 					choice := EnvMenuChoice(foundEnv)
 					return choice
 				}
 				return m, teaCmd
-			} else {
-				fmt.Printf("Environment with name '%s' not found.\n", selected)
+				// } else {
+				// 	fmt.Printf("Environment with name '%s' not found.\n", selected)
 			}
 
 			return m, nil
