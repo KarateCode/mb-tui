@@ -1,9 +1,9 @@
 package peak_setup_integration
 
 import (
-	"bufio"
+	// "bufio"
 	"fmt"
-	"strings"
+	// "strings"
 
 	exec "example.com/downloader/exec"
 	tea "github.com/charmbracelet/bubbletea"
@@ -34,6 +34,29 @@ func getRequestedFileExtensions(choice string) []string {
 	}
 
 	return nil
+}
+
+func commandForIntegration(choice string, env peakEnv) string {
+	giveMeEverything := bool(choice == "Nope! Give me them all")
+	requestedFileExtensions := getRequestedFileExtensions(choice)
+
+	prefix := calcPrefix(env.clientCode)
+	var showBatchesCmd string
+	if giveMeEverything {
+		showBatchesCmd = fmt.Sprintf(
+			`cd /client/%s/archive; ls | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 100 | tac`,
+			env.subFolder,
+			prefix,
+		)
+	} else {
+		showBatchesCmd = fmt.Sprintf(
+			`cd /client/%s/archive; ls *%s* | sed -n 's/%s[a-z_]*\.//p' | sed -n 's/\.csv//p' | sort | uniq | tail -n 20 | tac`,
+			env.subFolder,
+			requestedFileExtensions[0],
+			prefix,
+		)
+	}
+	return showBatchesCmd
 }
 
 func NewCalculateBatchesModel(integrationMenuChoice IntegrationMenuChoice, env peakEnv) calculateBatchesModel {
@@ -76,17 +99,18 @@ func (m calculateBatchesModel) Init() tea.Cmd {
 			panic(err)
 		}
 
-		lines := calcBatchesCompleteMsg{}
-		scanner := bufio.NewScanner(strings.NewReader(string(output)))
+		return calcBatchesCompleteMsg(output)
+		// lines := calcBatchesCompleteMsg{}
+		// scanner := bufio.NewScanner(strings.NewReader(string(output)))
 
-		for scanner.Scan() {
-			line := strings.TrimSpace(scanner.Text())
-			if line != "" {
-				lines = append(lines, line)
-			}
-		}
+		// for scanner.Scan() {
+		// 	line := strings.TrimSpace(scanner.Text())
+		// 	if line != "" {
+		// 		lines = append(lines, line)
+		// 	}
+		// }
 
-		return lines
+		// return lines
 	}
 }
 
