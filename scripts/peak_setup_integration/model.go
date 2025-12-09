@@ -4,10 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"strings"
-	// "example.com/downloader/batchmenu"
-	// "github.com/charmbracelet/bubbles/progress"
-	// batchmenu "example.com/downloader/batchmenu"
-	// "fmt"
 
 	tui "example.com/downloader/tui"
 	downloader "example.com/downloader/tui/downloader"
@@ -27,12 +23,12 @@ const (
 	stepCleanServerFiles
 )
 
-type IntegrationMenuChoice string
-type BatchChoice string
-type EnvMenuChoice string
-type copyCompleteMsg string
-type cleanServerCompleteMsg string
-type calcBatchesCompleteMsg string
+type integrationMenuComplete string
+type batchMenuComplete string
+type envMenuComplete string
+type copyFilesComplete string
+type cleanServerComplete string
+type calcBatchesComplete string
 
 type Model struct {
 	step        step
@@ -67,7 +63,7 @@ func NewModel() *Model {
 		names,
 		func(selected string) tea.Cmd {
 			teaCmd := func() tea.Msg {
-				choice := EnvMenuChoice(selected)
+				choice := envMenuComplete(selected)
 				return choice
 			}
 			return teaCmd
@@ -81,14 +77,16 @@ func NewModel() *Model {
 }
 
 func calcPrefix(clientCode string) string {
-	if clientCode == "cascade-na" {
+	switch clientCode {
+	case "cascade-na":
 		return "lax_"
-	} else if clientCode == "bauer-na" {
+	case "bauer-na":
 		return "hockey_na_"
-	} else if clientCode == "bauer-eu" {
+	case "bauer-eu":
+		return "hockey_eu_"
+	default:
 		return "hockey_eu_"
 	}
-	return "hockey_eu_"
 }
 
 func linesFromOutput(output string) []string {
@@ -108,7 +106,7 @@ func linesFromOutput(output string) []string {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case EnvMenuChoice:
+	case envMenuComplete:
 		selected := string(msg)
 
 		foundEnv, _ := findEnvByName(environments(), selected)
@@ -116,18 +114,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.prefix = calcPrefix(foundEnv.clientCode)
 		m.integrationMenu = tui.NewMenu(
 			"Which Integration batch would you like?",
-			[]string{
-				"Nope! Give me them all",
-				"Product Import",
-				"Customer Import",
-				"Inventory Import",
-				"SalesRep Import",
-				"BG/BHC import",
-				"SalesOrg/PoType Import",
-			},
+			integrationListItems(),
 			func(selected string) tea.Cmd {
 				teaCmd := func() tea.Msg {
-					return IntegrationMenuChoice(selected)
+					return integrationMenuComplete(selected)
 				}
 				return teaCmd
 			},
@@ -135,7 +125,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.step = stepIntegrationMenu
 		return m, m.integrationMenu.Init()
 
-	case IntegrationMenuChoice:
+	case integrationMenuComplete:
 		m.step = stepCalcBatches
 		choice := string(msg)
 		showBatchesCmd := commandForIntegration(choice, m.envMenuChoice)
@@ -145,13 +135,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			showBatchesCmd,
 			"Calculating batches...",
 			func(output string) tea.Msg {
-				return calcBatchesCompleteMsg(output)
+				return calcBatchesComplete(output)
 			},
 		)
 		return m, m.calcBatches.Init()
 
-	case calcBatchesCompleteMsg:
-		output := calcBatchesCompleteMsg(msg)
+	case calcBatchesComplete:
+		output := calcBatchesComplete(msg)
 		lines := linesFromOutput(string(output))
 
 		m.batchMenu = tui.NewMenu(
@@ -159,7 +149,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			lines,
 			func(selected string) tea.Cmd {
 				teaCmd := func() tea.Msg {
-					choice := BatchChoice(selected)
+					choice := batchMenuComplete(selected)
 					return choice
 				}
 				return teaCmd
@@ -168,7 +158,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.step = stepBatchMenu
 		return m, m.batchMenu.Init()
 
-	case BatchChoice:
+	case batchMenuComplete:
 		choice := string(msg)
 		m.batchChoice = choice
 		copyFilesCmd := generateCopyFilesCmd(m.envMenuChoice, choice)
@@ -178,14 +168,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			copyFilesCmd,
 			"Copying files to /client/dumps...",
 			func(output string) tea.Msg {
-				return copyCompleteMsg(output)
+				return copyFilesComplete(output)
 			},
 		)
 		m.step = stepCopyingBatchFiles
 		return m, m.copyBatchFiles.Init()
 
-	case copyCompleteMsg:
-		output := copyCompleteMsg(msg)
+	case copyFilesComplete:
+		output := copyFilesComplete(msg)
 		fileNames := linesFromOutput(string(output))
 
 		m.downloader = downloader.NewModel(fileNames)
@@ -195,7 +185,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.step = stepDownloading
 		return m, downloadFiles
 
-	case cleanServerCompleteMsg:
+	case cleanServerComplete:
 		fmt.Println("\n\nHave a great day!")
 		return m, tea.Quit
 
@@ -240,7 +230,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				copyFilesCmd,
 				"Cleaning up files on the server...",
 				func(output string) tea.Msg {
-					return cleanServerCompleteMsg(output)
+					return cleanServerComplete(output)
 				},
 			)
 			m.step = stepCleanServerFiles

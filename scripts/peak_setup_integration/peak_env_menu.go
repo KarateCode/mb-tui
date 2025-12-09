@@ -8,6 +8,18 @@ type peakEnv struct {
 }
 type peakEnvs []peakEnv
 
+func integrationListItems() []string {
+	return []string{
+		"Nope! Give me them all",
+		"Product Import",
+		"Customer Import",
+		"Inventory Import",
+		"SalesRep Import",
+		"BG/BHC import",
+		"SalesOrg/PoType Import",
+	}
+}
+
 func environments() peakEnvs {
 	return peakEnvs{
 		{
