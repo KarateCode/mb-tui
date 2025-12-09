@@ -30,7 +30,7 @@ const (
 type IntegrationMenuChoice string
 type BatchChoice string
 type EnvMenuChoice string
-type copyCompleteMsg []string
+type copyCompleteMsg string
 type cleanServerCompleteMsg string
 type calcBatchesCompleteMsg string
 
@@ -42,7 +42,7 @@ type Model struct {
 	integrationMenu  tui.MenuModel
 	calcBatches      tui.SshCmdModel
 	batchMenu        tui.MenuModel
-	copyBatchFiles   CopyBatchFilesModel
+	copyBatchFiles   tui.SshCmdModel
 	downloader       downloader.Model
 	cleanServerFiles CleanServerFilesModel
 
@@ -141,7 +141,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.calcBatches = tui.NewShellCmd(
 			m.envMenuChoice.sshServer,
 			showBatchesCmd,
-			"Calculating batches from stuff...",
+			"Calculating batches...",
 			func(output string) tea.Msg {
 				return calcBatchesCompleteMsg(output)
 			},
@@ -168,12 +168,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case BatchChoice:
 		choice := string(msg)
 		m.batchChoice = choice
-		m.copyBatchFiles = NewCopyBatchFilesModel(choice, m.envMenuChoice)
+		copyFilesCmd := generateCopyFilesCmd(m.envMenuChoice, choice)
+
+		m.copyBatchFiles = tui.NewShellCmd(
+			m.envMenuChoice.sshServer,
+			copyFilesCmd,
+			"Copying files to /client/dumps...",
+			func(output string) tea.Msg {
+				return copyCompleteMsg(output)
+			},
+		)
 		m.step = stepCopyingBatchFiles
 		return m, m.copyBatchFiles.Init()
 
 	case copyCompleteMsg:
-		fileNames := []string(msg)
+		output := copyCompleteMsg(msg)
+		fileNames := linesFromOutput(string(output))
+
 		m.downloader = downloader.NewModel(fileNames)
 		downloadFiles := func() tea.Msg {
 			return downloader.DownloadFiles(fileNames, m.envMenuChoice.sshServer, m.Program)
@@ -182,7 +193,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, downloadFiles
 
 	case cleanServerCompleteMsg:
-		fmt.Println("Clean exit")
+		fmt.Println("\n\nHave a great day! ☀️")
 		return m, tea.Quit
 
 	case tea.KeyMsg:
