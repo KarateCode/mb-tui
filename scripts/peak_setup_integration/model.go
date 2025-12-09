@@ -44,7 +44,7 @@ type Model struct {
 	batchMenu        tui.MenuModel
 	copyBatchFiles   tui.SshCmdModel
 	downloader       downloader.Model
-	cleanServerFiles CleanServerFilesModel
+	cleanServerFiles tui.SshCmdModel
 
 	batchChoice   string
 	envMenuChoice peakEnv
@@ -193,7 +193,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, downloadFiles
 
 	case cleanServerCompleteMsg:
-		fmt.Println("\n\nHave a great day! ☀️")
+		fmt.Println("\n\nHave a great day!")
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -229,9 +229,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stepDownloading:
 		m.downloader, cmd = m.downloader.Update(msg)
 
-		// This one's the exception to the rule, moving to next step here because of progress bar's weird paradigm
+		// This one that's the exception to the rule; moving to the next step here because of progress bar's weird paradigm
 		if m.downloader.Done {
-			m.cleanServerFiles = NewCleanServerFilesModel(m.batchChoice, m.envMenuChoice)
+			copyFilesCmd := generateCleanServerFilesCmd(m.envMenuChoice, m.batchChoice)
+			m.cleanServerFiles = tui.NewShellCmd(
+				m.envMenuChoice.sshServer,
+				copyFilesCmd,
+				"Cleaning up files on the server...",
+				func(output string) tea.Msg {
+					return cleanServerCompleteMsg(output)
+				},
+			)
 			m.step = stepCleanServerFiles
 			return m, m.cleanServerFiles.Init()
 		}
