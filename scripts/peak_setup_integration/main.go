@@ -1,7 +1,7 @@
 package peak_setup_integration
 
 import (
-	"fmt"
+	// "fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -11,6 +11,6 @@ func PeakSetupIntegration() {
 	program := tea.NewProgram(model)
 	model.Program = program
 	if _, err := program.Run(); err == nil {
-		fmt.Println("exiting p.Run")
+		// fmt.Println("exiting p.Run")
 	}
 }

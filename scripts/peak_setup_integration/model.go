@@ -1,9 +1,9 @@
 package peak_setup_integration
 
 import (
-	// "fmt"
-	// "strings"
-
+	"bufio"
+	"fmt"
+	"strings"
 	// "example.com/downloader/batchmenu"
 	// "github.com/charmbracelet/bubbles/progress"
 	// batchmenu "example.com/downloader/batchmenu"
@@ -32,7 +32,7 @@ type BatchChoice string
 type EnvMenuChoice string
 type copyCompleteMsg []string
 type cleanServerCompleteMsg string
-type calcBatchesCompleteMsg []string
+type calcBatchesCompleteMsg string
 
 type Model struct {
 	step        step
@@ -40,7 +40,7 @@ type Model struct {
 	prefix      string
 
 	integrationMenu  tui.MenuModel
-	calcBatches      calculateBatchesModel
+	calcBatches      tui.SshCmdModel
 	batchMenu        tui.MenuModel
 	copyBatchFiles   CopyBatchFilesModel
 	downloader       downloader.Model
@@ -90,6 +90,20 @@ func calcPrefix(clientCode string) string {
 	return "hockey_eu_"
 }
 
+func linesFromOutput(output string) []string {
+	lines := []string{}
+
+	scanner := bufio.NewScanner(strings.NewReader(string(output)))
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+
+	return lines
+}
+
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
@@ -111,8 +125,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			},
 			func(selected string) tea.Cmd {
 				teaCmd := func() tea.Msg {
-					choice := IntegrationMenuChoice(selected)
-					return choice
+					return IntegrationMenuChoice(selected)
 				}
 				return teaCmd
 			},
@@ -121,13 +134,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.integrationMenu.Init()
 
 	case IntegrationMenuChoice:
-		choice := IntegrationMenuChoice(msg)
-		m.calcBatches = NewCalculateBatchesModel(choice, m.envMenuChoice)
 		m.step = stepCalcBatches
+		choice := string(msg)
+		showBatchesCmd := commandForIntegration(choice, m.envMenuChoice)
+
+		m.calcBatches = tui.NewShellCmd(
+			m.envMenuChoice.sshServer,
+			showBatchesCmd,
+			"Calculating batches from stuff...",
+			func(output string) tea.Cmd {
+				return func() tea.Msg {
+					return calcBatchesCompleteMsg(output)
+				}
+			},
+		)
 		return m, m.calcBatches.Init()
 
 	case calcBatchesCompleteMsg:
-		lines := calcBatchesCompleteMsg(msg)
+		output := calcBatchesCompleteMsg(msg)
+		lines := linesFromOutput(string(output))
+
 		m.batchMenu = tui.NewMenu(
 			lines,
 			func(selected string) tea.Cmd {
@@ -158,6 +184,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, downloadFiles
 
 	case cleanServerCompleteMsg:
+		fmt.Println("Clean exit")
 		return m, tea.Quit
 
 	case tea.KeyMsg:
@@ -167,30 +194,30 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	var cmd tea.Cmd
 	switch m.step {
 
 	case stepEnvMenu:
-		var cmd tea.Cmd
 		m.peakEnvMenu, cmd = m.peakEnvMenu.Update(msg)
 		return m, cmd
 
 	case stepIntegrationMenu:
-		var cmd tea.Cmd
 		m.integrationMenu, cmd = m.integrationMenu.Update(msg)
 		return m, cmd
 
+	case stepCalcBatches:
+		m.calcBatches, cmd = m.calcBatches.Update(msg)
+		return m, cmd
+
 	case stepBatchMenu:
-		var cmd tea.Cmd
 		m.batchMenu, cmd = m.batchMenu.Update(msg)
 		return m, cmd
 
 	case stepCopyingBatchFiles:
-		var cmd tea.Cmd
 		m.copyBatchFiles, cmd = m.copyBatchFiles.Update(msg)
 		return m, cmd
 
 	case stepDownloading:
-		var cmd tea.Cmd
 		m.downloader, cmd = m.downloader.Update(msg)
 
 		// This one's the exception to the rule, moving to next step here because of progress bar's weird paradigm
