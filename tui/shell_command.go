@@ -39,7 +39,6 @@ func (m SshCmdModel) Init() tea.Cmd {
 			panic(err)
 		}
 
-		_, err = exec.RunRemoteCommand(host, m.sshCommand)
 		output, err := exec.RunRemoteCommand(host, m.sshCommand)
 		if err != nil {
 			panic(err)
