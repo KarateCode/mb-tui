@@ -92,10 +92,6 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
 				teaCmd := m.emitChoice(m.selected)
-				// teaCmd := func() tea.Msg {
-				// 	choice := IntegrationMenuChoice(m.selected)
-				// 	return choice
-				// }
 
 				return m, teaCmd
 			}

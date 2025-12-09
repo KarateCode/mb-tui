@@ -142,10 +142,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.envMenuChoice.sshServer,
 			showBatchesCmd,
 			"Calculating batches from stuff...",
-			func(output string) tea.Cmd {
-				return func() tea.Msg {
-					return calcBatchesCompleteMsg(output)
-				}
+			func(output string) tea.Msg {
+				return calcBatchesCompleteMsg(output)
 			},
 		)
 		return m, m.calcBatches.Init()
