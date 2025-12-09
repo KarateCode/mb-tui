@@ -50,7 +50,8 @@ func NewMenu(message string, options []string, callback TeaCmdCallback) MenuMode
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
 
-	l := list.New(items, delegate, 50, 25) // WIDTH, HEIGHT
+	height := len(options) + 3
+	l := list.New(items, delegate, 50, height) // WIDTH, HEIGHT
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
