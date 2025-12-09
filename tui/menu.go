@@ -29,11 +29,8 @@ type MenuModel struct {
 }
 
 var (
-	tealStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("14")) // teal/cyan
-	blueStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("12")) // blue
-	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("12")) // blue prompt ">"
-	cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // yellow cursor
-	typedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("15")) // user text color (white)
+	tealStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("14")) // teal/cyan
+	blueStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("12")) // blue
 )
 
 func NewMenu(message string, options []string, callback TeaCmdCallback) MenuModel {
@@ -53,7 +50,7 @@ func NewMenu(message string, options []string, callback TeaCmdCallback) MenuMode
 	delegate.SetHeight(1)
 	delegate.SetSpacing(0)
 
-	l := list.New(items, delegate, 50, 40) // WIDTH, HEIGHT
+	l := list.New(items, delegate, 50, 25) // WIDTH, HEIGHT
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(true)
 	l.SetShowHelp(false)
@@ -150,6 +147,7 @@ func (m MenuModel) View() string {
 	// }
 
 	// Color Reference:
+	// "15" - White/text color
 	// "14" — Cyan/Teal
 	// "12" — Blue
 	// "13" — Magenta

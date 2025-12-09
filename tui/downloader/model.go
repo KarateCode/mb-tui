@@ -1,10 +1,8 @@
 package downloader
 
 import (
-	// "fmt"
 	"strings"
 
-	// "example.com/downloader/batchmenu"
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -62,12 +60,10 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 		if d.downloaded >= d.total {
 			d.done = true
-			// return m, tea.Quit
 		}
 		return m, nil
 
 	case SetTotalMsg:
-		// fmt.Printf("\n\n\n\n\nsetTotalMsg: %+v %+v \n", msg.Index, msg.Total)
 		m.fileDownloads[msg.Index].total = msg.Total
 		return m, nil
 

@@ -2,7 +2,6 @@ package peak_setup_integration
 
 import (
 	"bufio"
-	"fmt"
 	"strings"
 
 	tui "example.com/downloader/tui"
@@ -21,6 +20,7 @@ const (
 	stepCopyingBatchFiles
 	stepDownloading
 	stepCleanServerFiles
+	stepDone
 )
 
 type integrationMenuComplete string
@@ -186,8 +186,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, downloadFiles
 
 	case cleanServerComplete:
-		fmt.Println("\n\nHave a great day!")
-		return m, tea.Quit
+		m.step = stepDone
+		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -236,11 +236,46 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.step = stepCleanServerFiles
 			return m, m.cleanServerFiles.Init()
 		}
-
 		return m, cmd
+
+	case stepCleanServerFiles:
+		m.cleanServerFiles, cmd = m.cleanServerFiles.Update(msg)
+		return m, cmd
+
+	case stepDone:
+		return m, tea.Quit
 	}
 
 	return m, nil
+}
+
+func completedTodosView(m *Model) string {
+	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#8aff8a")).Italic(true)
+	completedTodos := ""
+	if m.step > stepEnvMenu {
+		completedTodos += "\n  ✔ Peak environment chosen"
+	}
+	if m.step > stepIntegrationMenu {
+		completedTodos += "\n  ✔ Integration type selected"
+	}
+	if m.step > stepCalcBatches {
+		completedTodos += "\n  ✔ Batches calculated"
+	}
+	if m.step > stepBatchMenu {
+		completedTodos += "\n  ✔ Batch " + m.batchChoice + " chosen"
+	}
+	if m.step > stepCopyingBatchFiles {
+		completedTodos += "\n  ✔ Files copied to /client/dumps"
+	}
+	if m.step > stepDownloading {
+		completedTodos += "\n  ✔ All files in batch " + m.batchChoice + " downloaded"
+	}
+	if m.step > stepCleanServerFiles {
+		completedTodos += "\n  ✔ Cleaned out files in /client/dumps"
+	}
+	completedTodos += "\n\n"
+
+	return greenStyle.Render(completedTodos)
 }
 
 func (m *Model) View() string {
@@ -260,10 +295,10 @@ func (m *Model) View() string {
 			Render("  Peak Integration Setup  "),
 	)
 
-	// 2. Render active submodel
+	completedTodos := completedTodosView(m)
+
 	var body string
 	switch m.step {
-
 	case stepEnvMenu:
 		body = m.peakEnvMenu.View()
 
@@ -285,10 +320,18 @@ func (m *Model) View() string {
 	case stepCleanServerFiles:
 		body = m.cleanServerFiles.View()
 
+	case stepDone:
+		body = ""
+
 	default:
 		body = "unknown state"
 	}
 
 	// 3. Stack title + body vertically
-	return lipgloss.JoinVertical(lipgloss.Left, title, body)
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		title,
+		completedTodos,
+		body,
+	)
 }
