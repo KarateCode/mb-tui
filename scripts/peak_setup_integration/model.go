@@ -63,6 +63,7 @@ func NewModel() *Model {
 	}
 
 	m := tui.NewMenu(
+		"Select Peak Environment",
 		names,
 		func(selected string) tea.Cmd {
 			teaCmd := func() tea.Msg {
@@ -114,6 +115,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.envMenuChoice = foundEnv
 		m.prefix = calcPrefix(foundEnv.clientCode)
 		m.integrationMenu = tui.NewMenu(
+			"Which Integration batch would you like?",
 			[]string{
 				"Nope! Give me them all",
 				"Product Import",
@@ -153,6 +155,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		lines := linesFromOutput(string(output))
 
 		m.batchMenu = tui.NewMenu(
+			"Please select batch number",
 			lines,
 			func(selected string) tea.Cmd {
 				teaCmd := func() tea.Msg {

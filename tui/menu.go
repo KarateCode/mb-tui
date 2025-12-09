@@ -20,6 +20,7 @@ type TeaCmdCallback func(selected string) tea.Cmd
 
 type MenuModel struct {
 	allOptions  []string
+	message     string
 	filterInput textinput.Model
 	list        list.Model
 	emitChoice  TeaCmdCallback
@@ -27,13 +28,23 @@ type MenuModel struct {
 	selected string
 }
 
-func NewMenu(options []string, callback TeaCmdCallback) MenuModel {
+var (
+	tealStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("14")) // teal/cyan
+	blueStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("12")) // blue
+	promptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("12")) // blue prompt ">"
+	cursorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // yellow cursor
+	typedStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("15")) // user text color (white)
+)
+
+func NewMenu(message string, options []string, callback TeaCmdCallback) MenuModel {
 	// message: 'Would you like to trim files to a certain import?',
 	items := itemsFrom(options)
 
 	// Text input
 	ti := textinput.New()
 	ti.Placeholder = "Search..."
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("11")) // yellow
+	ti.Cursor.SetChar("|")
 	ti.Focus()
 
 	// List
@@ -53,6 +64,7 @@ func NewMenu(options []string, callback TeaCmdCallback) MenuModel {
 
 	return MenuModel{
 		allOptions:  options,
+		message:     message,
 		filterInput: ti,
 		list:        l,
 		emitChoice:  callback,
@@ -128,9 +140,30 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 }
 
 func (m MenuModel) View() string {
+	message := tealStyle.Render(m.message)
+	// If you just want the prefix “> ” blue, but the typed text normal:
+	// filter := m.filterInput.View()
+	// if strings.HasPrefix(filter, ">") {
+	// 	filter = blueStyle.Render(">") + filter[1:]
+	// }
+
+	// Color Reference:
+	// "14" — Cyan/Teal
+	// "12" — Blue
+	// "13" — Magenta
+	// "11" — Yellow
+	// "9" — Red
+	filter := m.filterInput.View()
+	if filter == ">" {
+		filter = blueStyle.Render(">")
+	} else {
+		filter = blueStyle.Render(filter)
+	}
+
 	return fmt.Sprintf(
-		"Filter: %s\n\n%s",
-		m.filterInput.View(),
+		"\n\n%s\n%s\n\n%s",
+		message,
+		filter,
 		m.list.View(),
 	)
 }
