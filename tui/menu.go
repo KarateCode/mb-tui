@@ -100,6 +100,10 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 			m.list.CursorUp()
 			return m, nil
 
+		case "ctrl+g":
+			m.filterInput.SetValue("")
+			return m, nil
+
 		case "enter":
 			if selected, ok := m.list.SelectedItem().(item); ok {
 				m.selected = string(selected)
@@ -107,9 +111,7 @@ func (m MenuModel) Update(msg tea.Msg) (MenuModel, tea.Cmd) {
 
 				return m, teaCmd
 			}
-			return m, nil // should probably send back a Cmd where tea.Msg is the selected value
-			// might have to convert from item to string
-			// IntegrationMenuChoice
+			return m, nil
 		}
 	}
 
@@ -161,7 +163,7 @@ func (m MenuModel) View() string {
 	}
 
 	return fmt.Sprintf(
-		"\n\n%s\n%s\n\n%s",
+		"%s\n%s%s",
 		message,
 		filter,
 		m.list.View(),

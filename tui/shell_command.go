@@ -10,6 +10,10 @@ import (
 
 type SshCmdCallback func(selected string) tea.Msg
 
+var (
+	grayItalic = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Italic(true)
+)
+
 type SshCmdModel struct {
 	sshAlias   string
 	sshCommand string
@@ -72,6 +76,6 @@ func (m SshCmdModel) View() string {
 	return fmt.Sprintf(
 		"\n\n  %s %s",
 		m.spin.View(),
-		m.message,
+		grayItalic.Render(m.message),
 	)
 }
