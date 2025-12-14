@@ -1,9 +1,11 @@
 package main
 
 import (
-	scripts "example.com/downloader/scripts/peak_setup_integration"
+	// peakSetupIntegration "example.com/downloader/scripts/peak_setup_integration"
+	wwwincSetupIntegration "example.com/downloader/scripts/wwwinc_setup_integration"
 )
 
 func main() {
-	scripts.PeakSetupIntegration()
+	wwwincSetupIntegration.WwwincSetupIntegration()
+	// peakSetupIntegration.PeakSetupIntegration()
 }
