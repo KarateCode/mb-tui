@@ -1,13 +1,16 @@
 package downloader
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type fileDownload struct {
+	name       string
 	total      int64
 	downloaded int64
 	bar        progress.Model
@@ -39,7 +42,8 @@ func NewModel(fileNames []string) Model {
 		fileDownloads: make([]fileDownload, fileCount),
 	}
 
-	for i := range m.fileDownloads {
+	for i, fileName := range fileNames {
+		m.fileDownloads[i].name = fileName
 		m.fileDownloads[i].bar = progress.New(progress.WithDefaultGradient())
 	}
 
@@ -86,14 +90,20 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) View() string {
 	var lines []string
 	lines = append(lines, "\n", "")
+	grayItalic := lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Italic(true)
 
-	for _, d := range m.fileDownloads {
+	for _, download := range m.fileDownloads {
 		var ratio float64
-		if d.total > 0 {
-			ratio = float64(d.downloaded) / float64(d.total)
+		if download.total > 0 {
+			ratio = float64(download.downloaded) / float64(download.total)
 		}
 
-		lines = append(lines, d.bar.ViewAs(ratio), "")
+		line := fmt.Sprintf(
+			"%s\n%s",
+			grayItalic.Render(download.name),
+			download.bar.ViewAs(ratio),
+		)
+		lines = append(lines, line, "")
 	}
 
 	return strings.Join(lines, "\n")

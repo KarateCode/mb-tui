@@ -18,30 +18,49 @@ type SetTotalCallback func(downloaded int64)
 type SetDoneCallback func()
 
 func DownloadFiles(fileNames []string, sshAlias string, p *tea.Program) tea.Msg {
-	// fmt.Printf("Downloading from: %+v\n", sshAlias)
+	const maxConcurrent = 7
+	sem := make(chan struct{}, maxConcurrent)
 
 	for i, fileName := range fileNames {
-		cwd, _ := os.Getwd()
-		remote := "/client/dump/" + fileName
-		local := filepath.Join(cwd, fileName)
+		i := i // capture loop variable
+		fileName := fileName
 
-		go DownloadFile(
-			sshAlias,
-			remote,
-			local,
-			func(total int64) {
-				p.Send(SetTotalMsg{Index: i, Total: total})
-			},
-			func(bytes int64) {
-				p.Send(ProgressMsg{Index: i, Bytes: bytes})
-			},
-			func() {
-				p.Send(DoneMsg{Index: i})
-			},
-		)
+		sem <- struct{}{} // acquire slot
+
+		go func() {
+			defer func() { <-sem }() // release slot
+
+			cwd, _ := os.Getwd()
+			remote := "/client/dump/" + fileName
+			local := filepath.Join(cwd, fileName)
+
+			err := DownloadFile(
+				sshAlias,
+				remote,
+				local,
+				func(total int64) {
+					p.Send(SetTotalMsg{Index: i, Total: total})
+
+				},
+				func(bytes int64) {
+					p.Send(ProgressMsg{Index: i, Bytes: bytes})
+
+				},
+				func() {
+					p.Send(DoneMsg{Index: i})
+
+				},
+			)
+
+			if err != nil {
+				// optional: send error message to Bubble Tea
+				fmt.Printf("download failed: %v\n", err)
+
+			}
+		}()
 	}
 
-	return "Download Files complete"
+	return "Download Files started"
 }
 
 func DownloadFile(
