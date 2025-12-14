@@ -2,9 +2,10 @@ package wwwinc_setup_integration
 
 import (
 	"bufio"
-	// "fmt"
+	"fmt"
 	"strings"
 
+	exec "example.com/downloader/exec"
 	tui "example.com/downloader/tui"
 	downloader "example.com/downloader/tui/downloader"
 	tea "github.com/charmbracelet/bubbletea"
@@ -186,6 +187,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		downloadFiles := func() tea.Msg {
 			return downloader.DownloadFiles(fileNames, m.envMenuChoice.sshServer, m.Program)
 		}
+
+		cmd := fmt.Sprintf(
+			"touch %s.DON",
+			m.batchChoice,
+		)
+		exec.RunLocalCommand(cmd)
+
 		m.step = stepDownloading
 		return m, downloadFiles
 

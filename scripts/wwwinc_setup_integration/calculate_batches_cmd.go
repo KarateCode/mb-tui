@@ -12,7 +12,6 @@ func getRequestedFileExtensions(choice string) []string {
 			"CSR",
 			"CUS",
 			"SRM",
-			"DON",
 		}
 	} else if choice == "Catalog import" {
 		return []string{
@@ -25,7 +24,6 @@ func getRequestedFileExtensions(choice string) []string {
 			"BRANDMASTER",
 			"FLC",
 			"FLG",
-			"DON",
 		}
 	} else if choice == "Customer import" {
 		return []string{
@@ -37,20 +35,17 @@ func getRequestedFileExtensions(choice string) []string {
 			"CUS",
 			"SALESREPSECURITY",
 			"ITE",
-			"DON",
 		}
 	} else if choice == "Flag import" {
 		return []string{
 			"FLG",
 			"BRANDMASTER",
-			"DON",
 		}
 	} else if choice == "Grid import" {
 		return []string{
 			"ITE",
 			"BRANDMASTER",
 			"MGR",
-			"DON",
 		}
 	} else if choice == "Product import" {
 		return []string{
@@ -60,14 +55,12 @@ func getRequestedFileExtensions(choice string) []string {
 			"PRICE",
 			"BRANDMASTER",
 			"UPC",
-			"DON",
 		}
 	} else if choice == "Sales Rep import" {
 		return []string{
 			"SALESREPSECURITY",
 			"BRANDMASTER",
 			"SRM",
-			"DON",
 		}
 	}
 

@@ -3,6 +3,7 @@ package exec
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -99,4 +100,14 @@ func RunRemoteCommand(host *ResolvedHost, command string) (string, error) {
 	}
 
 	return stdout.String(), nil
+}
+
+func RunLocalCommand(script string) {
+	cmd := exec.Command("sh", "-c", script)
+	out, err := cmd.CombinedOutput() // Captures both stdout and stderr
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
+	fmt.Printf("out:\n")
+	fmt.Printf("%+v\n", out)
 }
