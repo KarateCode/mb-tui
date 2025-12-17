@@ -22,9 +22,6 @@ func DownloadFiles(fileNames []string, sshAlias string, p *tea.Program) tea.Msg 
 	sem := make(chan struct{}, maxConcurrent)
 
 	for i, fileName := range fileNames {
-		i := i // capture loop variable
-		fileName := fileName
-
 		sem <- struct{}{} // acquire slot
 
 		go func() {
