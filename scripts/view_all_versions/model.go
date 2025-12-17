@@ -123,6 +123,16 @@ func gradientText(text string, start, end color.RGBA) string {
 	return out.String()
 }
 
+var subEnvStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("63")) // magenta
+
+func getLabelAndVersion(m *Model, body, label string, i int) (string, int) {
+	body += subEnvStyle.Render(label)
+	body += versionOrSpinner(m, i)
+	i += 1
+
+	return body, i
+}
+
 func (m *Model) View() string {
 	width := 64 // or get from Bubble Tea window size messages
 	title := lipgloss.Place(
@@ -141,7 +151,6 @@ func (m *Model) View() string {
 	)
 
 	i := 0
-	subEnvStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("63")) // magenta
 	header := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")) // orange
 
 	purple := color.RGBA{0x7C, 0x3A, 0xED, 0xFF}
@@ -153,131 +162,62 @@ func (m *Model) View() string {
 	body += gradientText("\n=======================\t\t\t=======================\n", purple, pink)
 
 	body += "\nWWWINC\t\t\t\t\tWWWINC\n"
-	body += subEnvStyle.Render("NA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tNA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
 
-	body += subEnvStyle.Render("\nEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "NA\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tNA\t\t", i)
+
+	body, i = getLabelAndVersion(m, body, "\nEU\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tEU\t\t", i)
 
 	body += "\n\nPEAK\t\t\t\t\tPEAK\n"
-	body += subEnvStyle.Render("NA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tNA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "NA\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tNA\t\t", i)
 
-	body += subEnvStyle.Render("\nEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nEU\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tEU\t\t", i)
 
-	body += subEnvStyle.Render("\nCascade\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tCascade\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nCascade\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tCascade\t\t", i)
 
 	body += "\n\nConverse\t\t\t\tConverse\n"
-	body += subEnvStyle.Render("NA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tNA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "NA\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tNA\t\t", i)
 
-	body += subEnvStyle.Render("\nEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tEU\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nEU\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tEU\t\t", i)
 
-	body += subEnvStyle.Render("\nLA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tLA\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nLA\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tLA\t\t", i)
 
-	body += subEnvStyle.Render("\nAP\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tAP\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nAP\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tAP\t\t", i)
 
 	body += "\n\nCore and Enterprise Light\t\t\t\tCore and Enterprise Light"
-	body += subEnvStyle.Render("\nCore\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tCore\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nCore\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tCore\t\t", i)
 
-	body += subEnvStyle.Render("\nNetsuite\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tNetsuite\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nNetsuite\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tNetsuite\t", i)
 
-	body += subEnvStyle.Render("\n\t\t\t\t\tDemo\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\n\t\t\t\t\tDemo\t\t", i)
 
-	body += subEnvStyle.Render("\nCID\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tCID\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nCID\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tCID\t\t", i)
 
-	body += subEnvStyle.Render("\nDanpost\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tDanpost\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nDanpost\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tDanpost\t\t", i)
 
-	body += subEnvStyle.Render("\nOofos\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tOofos\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nOofos\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tOofos\t\t", i)
 
-	body += subEnvStyle.Render("\nVida\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tVida\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nVida\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tVida\t\t", i)
 
-	body += subEnvStyle.Render("\nLandau\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tLandau\t\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nLandau\t\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tLandau\t\t", i)
 
-	body += subEnvStyle.Render("\nJoules EU\t")
-	body += versionOrSpinner(m, i)
-	i += 1
-	body += subEnvStyle.Render("\t\t\tJoules EU\t")
-	body += versionOrSpinner(m, i)
-	i += 1
+	body, i = getLabelAndVersion(m, body, "\nJoules EU\t", i)
+	body, i = getLabelAndVersion(m, body, "\t\t\tJoules EU\t", i)
 
 	body += "\n\n"
 
