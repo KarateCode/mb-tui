@@ -1,6 +1,10 @@
 package view_all_versions
 
 import (
+	"fmt"
+	"image/color"
+	"strings"
+
 	tui "example.com/downloader/tui"
 	downloader "example.com/downloader/tui/downloader"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -102,8 +106,25 @@ func versionOrSpinner(m *Model, i int) string {
 	}
 }
 
+func gradientText(text string, start, end color.RGBA) string {
+	runes := []rune(text)
+	n := len(runes)
+	var out strings.Builder
+	for i, r := range runes {
+		// simple linear interpolation
+		t := float64(i) / float64(n-1)
+		rC := uint8(float64(start.R)*(1-t) + float64(end.R)*t)
+		gC := uint8(float64(start.G)*(1-t) + float64(end.G)*t)
+		bC := uint8(float64(start.B)*(1-t) + float64(end.B)*t)
+		col := lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", rC, gC, bC))
+		out.WriteString(lipgloss.NewStyle().Foreground(col).Render(string(r)))
+	}
+
+	return out.String()
+}
+
 func (m *Model) View() string {
-	width := 58 // or get from Bubble Tea window size messages
+	width := 64 // or get from Bubble Tea window size messages
 	title := lipgloss.Place(
 		width,
 		1,
@@ -120,14 +141,18 @@ func (m *Model) View() string {
 	)
 
 	i := 0
-	subEnvStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205")) // magenta
+	subEnvStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("63")) // magenta
+	header := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")) // orange
+
+	purple := color.RGBA{0x7C, 0x3A, 0xED, 0xFF}
+	pink := color.RGBA{0xEC, 0x48, 0x99, 0xFF}
 
 	var body string
-	body += "\n\n==================\t\t\t==================\n"
-	body += "Staging\t\t\t\t\tProduction\n"
-	body += "==================\t\t\t==================\n"
+	body += gradientText("\n\n=======================\t\t\t=======================\n", purple, pink)
+	body += header.Render("Staging\t\t\t\t\tProduction")
+	body += gradientText("\n=======================\t\t\t=======================\n", purple, pink)
 
-	body += "WWWINC\t\t\t\t\tWWWINC\n"
+	body += "\nWWWINC\t\t\t\t\tWWWINC\n"
 	body += subEnvStyle.Render("NA\t\t")
 	body += versionOrSpinner(m, i)
 	i += 1
