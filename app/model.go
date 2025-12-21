@@ -1,6 +1,7 @@
 package main
 
 import (
+	peakSetupIntegration "example.com/downloader/scripts/peak_setup_integration"
 	viewAllVersions "example.com/downloader/scripts/view_all_versions"
 	wwwSetupIntegration "example.com/downloader/scripts/wwwinc_setup_integration"
 	tui "example.com/downloader/tui"
@@ -14,15 +15,17 @@ const (
 	stepScriptMenu step = iota
 	stepViewAllVersions
 	stepWwwSetupIntegration
+	stepPeakSetupIntegration
 )
 
 type Model struct {
 	step step
 
-	scriptMenu               tui.MenuModel
-	viewAllVersionsModel     *viewAllVersions.Model
-	wwwSetupIntegrationModel *wwwSetupIntegration.Model
-	Program                  *tea.Program
+	scriptMenu                tui.MenuModel
+	viewAllVersionsModel      *viewAllVersions.Model
+	wwwSetupIntegrationModel  *wwwSetupIntegration.Model
+	peakSetupIntegrationModel *peakSetupIntegration.Model
+	Program                   *tea.Program
 }
 
 func (m *Model) Init() tea.Cmd {
@@ -71,10 +74,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			model := wwwSetupIntegration.NewModel()
 			model.Program = m.Program
 			m.wwwSetupIntegrationModel = model
-			teaCmd := func() tea.Msg {
-				return viewAllVersions.GetVersionsOverHttp(m.Program)
-			}
-			return m, teaCmd
+			return m, nil
+		} else if choice == "Peak Setup Integration" {
+			m.step = stepPeakSetupIntegration
+			model := peakSetupIntegration.NewModel()
+			model.Program = m.Program
+			m.peakSetupIntegrationModel = model
+			return m, nil
 		}
 
 		return m, nil
@@ -102,6 +108,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		_, cmd = m.wwwSetupIntegrationModel.Update(msg)
 		return m, cmd
+
+	case stepPeakSetupIntegration:
+		var cmd tea.Cmd
+		_, cmd = m.peakSetupIntegrationModel.Update(msg)
+		return m, cmd
 	}
 
 	return m, nil
@@ -117,6 +128,8 @@ func (m *Model) View() string {
 		body = m.viewAllVersionsModel.View()
 	case stepWwwSetupIntegration:
 		body = m.wwwSetupIntegrationModel.View()
+	case stepPeakSetupIntegration:
+		body = m.peakSetupIntegrationModel.View()
 
 	default:
 		body = "unknown state"
