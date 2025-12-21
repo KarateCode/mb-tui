@@ -5,7 +5,7 @@ import (
 )
 
 func WwwincSetupIntegration() {
-	model := newModel()
+	model := NewModel()
 	program := tea.NewProgram(model)
 	model.Program = program
 	if _, err := program.Run(); err == nil {

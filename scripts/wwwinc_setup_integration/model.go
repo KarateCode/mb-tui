@@ -54,7 +54,7 @@ func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func newModel() *Model {
+func NewModel() *Model {
 	envs := environments()
 	names := make([]string, len(envs))
 	for i, s := range envs {
