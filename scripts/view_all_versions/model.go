@@ -134,21 +134,13 @@ func getLabelAndVersion(m *Model, body, label string, i int) (string, int) {
 }
 
 func (m *Model) View() string {
-	width := 64 // or get from Bubble Tea window size messages
-	title := lipgloss.Place(
-		width,
-		1,
-		lipgloss.Center,
-		lipgloss.Center,
-		lipgloss.NewStyle().
-			Bold(true).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("63")). // blue-ish
-			Foreground(lipgloss.Color("#FFA500")).  // orange
-			// Foreground(lipgloss.Color("#94E2D5")). // light teal
-			Padding(0, 1).
-			Render("  View All Versions  "),
-	)
+	title := lipgloss.NewStyle().
+		MarginLeft(19).
+		Bold(true).
+		BorderForeground(lipgloss.Color("63")). // blue-ish
+		Foreground(lipgloss.Color("#FFA500")).  // orange
+		Border(lipgloss.RoundedBorder()).
+		Render("   View All Versions   ")
 
 	i := 0
 	header := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")) // orange
