@@ -31,6 +31,7 @@ type getRequest struct {
 	total      int64
 	downloaded int64
 	done       bool
+	err        error
 }
 
 type Model struct {
@@ -77,7 +78,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ProgressGetVersion:
 		d := &m.getRequests[msg.Index]
-		d.version = msg.VersionString
+		if msg.Error != nil {
+			d.err = msg.Error
+			d.version = "error"
+		} else {
+			d.version = msg.VersionString
+		}
 		d.done = true
 		m.doneCount += 1
 		if m.doneCount >= len(links) {
@@ -98,8 +104,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
+var errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("196")) // red
+
 func versionOrSpinner(m *Model, i int) string {
 	if m.getRequests[i].done {
+		if m.getRequests[i].err != nil {
+			return errorStyle.Render("error")
+		}
 		return m.getRequests[i].version
 	} else {
 		return m.spin.View()

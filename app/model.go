@@ -68,7 +68,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			teaCmd := func() tea.Msg {
 				return viewAllVersions.GetVersionsOverHttp(m.Program)
 			}
-			return m, teaCmd
+			// Batch the spinner tick command with the HTTP fetch command
+			// to ensure the spinner animates while requests are in flight
+			return m, tea.Batch(m.viewAllVersionsModel.Init(), teaCmd)
 		} else if choice == "Wwwinc Setup Integration" {
 			m.step = stepWwwSetupIntegration
 			model := wwwSetupIntegration.NewModel()

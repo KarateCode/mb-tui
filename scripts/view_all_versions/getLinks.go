@@ -2,8 +2,8 @@ package view_all_versions
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -13,6 +13,7 @@ import (
 type ProgressGetVersion struct {
 	Index         int
 	VersionString string
+	Error         error
 }
 
 type ApiResponse struct {
@@ -67,8 +68,8 @@ func GetVersionsOverHttp(p *tea.Program) tea.Msg {
 		go func() {
 			resp, err := http.Get(link)
 			if err != nil {
-				log.Fatal("GET error:", err)
-
+				p.Send(ProgressGetVersion{Index: i, Error: fmt.Errorf("GET error: %w", err)})
+				return
 			}
 
 			// Ensure the response body is closed to prevent resource leaks
@@ -76,15 +77,15 @@ func GetVersionsOverHttp(p *tea.Program) tea.Msg {
 
 			// Check if the request was successful (status code 200 OK)
 			if resp.StatusCode != http.StatusOK {
-				log.Fatal("Status error:", resp.StatusCode, resp.Status)
-
+				p.Send(ProgressGetVersion{Index: i, Error: fmt.Errorf("status error: %d %s", resp.StatusCode, resp.Status)})
+				return
 			}
 
 			// Read the entire response body into a byte slice
 			bodyBytes, err := io.ReadAll(resp.Body)
 			if err != nil {
-				log.Fatal("Read body error:", err)
-
+				p.Send(ProgressGetVersion{Index: i, Error: fmt.Errorf("read body error: %w", err)})
+				return
 			}
 
 			// Convert the byte slice to a string
@@ -95,8 +96,8 @@ func GetVersionsOverHttp(p *tea.Program) tea.Msg {
 			// Unmarshal the JSON data into the struct
 			err = json.Unmarshal([]byte(jsonData), &apiResponse)
 			if err != nil {
-				log.Fatalf("Error unmarshalling JSON: %v", err)
-
+				p.Send(ProgressGetVersion{Index: i, Error: fmt.Errorf("JSON unmarshal error: %w", err)})
+				return
 			}
 
 			p.Send(ProgressGetVersion{Index: i, VersionString: apiResponse.Version})
