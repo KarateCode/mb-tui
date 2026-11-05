@@ -21,7 +21,12 @@ type ResolvedHost struct {
 
 func NewClientFromSshConfig(sshAlias string) (*ResolvedHost, error) {
 	// Load ~/.ssh/config
-	cfgPath := filepath.Join(os.Getenv("HOME"), ".ssh", "config")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve home directory: %w", err)
+	}
+
+	cfgPath := filepath.Join(home, ".ssh", "config")
 	f, err := os.Open(cfgPath)
 	if err != nil {
 		return nil, err
@@ -55,10 +60,29 @@ func NewClientFromSshConfig(sshAlias string) (*ResolvedHost, error) {
 		h.Port = "22"
 	}
 	if h.KeyPath != "" {
-		h.KeyPath = strings.ReplaceAll(h.KeyPath, "~", "/Users/michaelschneider")
+		h.KeyPath, err = expandHome(h.KeyPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return h, nil
+}
+
+// expandHome resolves a leading ~ in a path against the current user's home
+// directory, the same way OpenSSH treats IdentityFile. A ~ anywhere else in
+// the path is left alone.
+func expandHome(path string) (string, error) {
+	if path != "~" && !strings.HasPrefix(path, "~/") {
+		return path, nil
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve home directory for %q: %w", path, err)
+	}
+
+	return filepath.Join(home, strings.TrimPrefix(path, "~")), nil
 }
 
 func RunRemoteCommand(host *ResolvedHost, command string) (string, error) {
